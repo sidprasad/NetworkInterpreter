@@ -92,9 +92,9 @@ void build_sel_list () {
     char buff[2];
 
     for(i = 0; i < clsize; i++) {
-        if( read(connectlist[i], buff, 0) < 0) {
+        if(connectlist[i] != 0 && read(connectlist[i], buff, 0) < 0) {
+            close(connect[i]);
             connectlist[i] = 0;
-                        
         }
     }
 
@@ -106,7 +106,7 @@ void build_sel_list () {
     FD_SET(sockfd, &socks);
     /* Adds all possible connections to the fd_set socks */
     for(i = 0; i < clsize; i++) {
-        if(connectlist[i] >= 0 ) {
+        if(connectlist[i] > 0) {
             FD_SET(connectlist[i], &socks);
             if (connectlist[i] > hisockfd)
                 hisockfd = connectlist[i];
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
     if(int_pid = fork()) {
 
         /* Set socket so that it is non-blocking */ 
-        bzero((char *) &serv_addr, sizeof(serv_addr));
+        bzero((char *) &serv_addr, sizeof(serv_adsdr));
         portno = atoi(argv[1]);
 
         serv_addr.sin_family = AF_INET;
