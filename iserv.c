@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <sys/time.h>
 
+
 int int_pid;
 int hsize = 6;
 void service_client(int);
@@ -62,12 +63,20 @@ void error(const char *msg)
 
 
 void write_to_all() {
-
+    int i, read_len;
     char out[400];
     bzero((char *)&out, 400);
-    read(int_pid, out, 400);
+    read_len = read(int_pid, out, 400);
+    header ack;
+    ack.type = 2;
+    ack.len = read_len;
+    for (i=0; i<clsize; i++) {
+        if (connectlist[i] != 0) {
+            write(connectlist[i], &ack, 6);
+            write(connectlist[i], out, read_len);
+        }
+    }
     fprintf(stdout, "-> %s\n",out);
-
 }
 
 
@@ -151,66 +160,66 @@ void read_socks() {
 int main(int argc, char *argv[])
 {
     int fd_[2];
-     int newsockfd, portno, i;
-     int num_socks, numsocks; /* Holds the number of sockets ready for reading */
-     struct sockaddr_in serv_addr, cli_addr;
-     struct timeval timeout; /* timeout for select */    
-     bzero((int *) &activitylist, sizeof(activitylist));
-     if (argc < 2) {
-         fprintf(stderr,"ERROR, no port provided\n");
-         exit(1);
-     }
-
-    /* Get file descriptor for " listening socket" */
-     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-     if (sockfd < 0) 
-        error("ERROR opening socket");
-  
-     if(int_pid = fork()) {
- 
-    /* Set socket so that it is non-blocking */ 
-     bzero((char *) &serv_addr, sizeof(serv_addr));
-     portno = atoi(argv[1]);
-
-     serv_addr.sin_family = AF_INET;
-     serv_addr.sin_addr.s_addr = INADDR_ANY;
-     serv_addr.sin_port = htons(portno);
-     
-
-    if (bind(sockfd, (struct sockaddr *) &serv_addr,
-              sizeof(serv_addr)) < 0) 
-              error("ERROR on binding");
-
-     listen(sockfd,5);
-
-
-    /* We keep track of the highest socket fd*/
-    hisockfd = sockfd;
-    bzero((char*)connectlist, sizeof(connectlist));
-
-    for (i = 0; i < 200; i++) {
-        connectlist[i] = -1;
+    int newsockfd, portno, i;
+    int num_socks, numsocks; /* Holds the number of sockets ready for reading */
+    struct sockaddr_in serv_addr, cli_addr;
+    struct timeval timeout; /* timeout for select */    
+    bzero((int *) &activitylist, sizeof(activitylist));
+    if (argc < 2) {
+        fprintf(stderr,"ERROR, no port provided\n");
+        exit(1);
     }
 
-    /* Now loop forever */ 
-    while(1) {
-   
-    build_sel_list();
+    /* Get file descriptor for " listening socket" */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) 
+        error("ERROR opening socket");
 
-    num_socks = select(hisockfd+1, &socks, (fd_set *)0, (fd_set *) 0, NULL);
-    
-    if( num_socks < 0) {
-        error("Selectd failed\n");
+    if(int_pid = fork()) {
 
-    } else if (num_socks == 0) {
-        printf("Nothing selected\n");
-    } else {
-        read_socks();
-    }  
+        /* Set socket so that it is non-blocking */ 
+        bzero((char *) &serv_addr, sizeof(serv_addr));
+        portno = atoi(argv[1]);
 
-   }
-     close(sockfd);
-     return 0; 
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_addr.s_addr = INADDR_ANY;
+        serv_addr.sin_port = htons(portno);
+
+
+        if (bind(sockfd, (struct sockaddr *) &serv_addr,
+            sizeof(serv_addr)) < 0) 
+            error("ERROR on binding");
+
+        listen(sockfd,5);
+
+
+        /* We keep track of the highest socket fd*/
+        hisockfd = sockfd;
+        bzero((char*)connectlist, sizeof(connectlist));
+
+        for (i = 0; i < 200; i++) {
+            connectlist[i] = 0;
+        }
+
+        /* Now loop forever */ 
+        while(1) {
+
+            build_sel_list();
+
+            num_socks = select(hisockfd+1, &socks, (fd_set *)0, (fd_set *) 0, NULL);
+
+            if( num_socks < 0) {
+                error("Selectd failed\n");
+
+            } else if (num_socks == 0) {
+                printf("Nothing selected\n");
+            } else {
+                read_socks();
+            }  
+
+        }
+        close(sockfd);
+        return 0; 
     } else {
 
         close(1);
@@ -257,7 +266,7 @@ void service_client(int index) {
             printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
             c_error(index);
             return;
-        }
+        } 
     }
         // type 1 is to connect
         if(hd.type == 1) {
@@ -267,7 +276,11 @@ void service_client(int index) {
         } else if (hd.type == 3) {
 
                 if(connectlist[index]) {                                  
-                    
+                                
+                    header ack; 
+                    ack.type = 4;
+                    ack.len = 0;
+                    write(connectlist[index], &ack, 6);         
                     write(int_pid, msg, strlen(msg));
                     write_to_all();
 
