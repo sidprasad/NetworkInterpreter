@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
         }
 
         sn = read(sockfd, &ack, 6);
-       sn = read(sockfd, interpreter_msg, ack.len);
+       sn = read(sockfd, interpreter_msg, ack.length);
         if (sn < 0) {
             error("ERROR reading from socket");
         } else

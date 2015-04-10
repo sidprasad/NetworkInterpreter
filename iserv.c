@@ -93,7 +93,7 @@ void build_sel_list () {
 
     for(i = 0; i < clsize; i++) {
         if(connectlist[i] != 0 && read(connectlist[i], buff, 0) < 0) {
-            close(connect[i]);
+            close(connectlist[i]);
             connectlist[i] = 0;
         }
     }
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
     if(int_pid = fork()) {
 
         /* Set socket so that it is non-blocking */ 
-        bzero((char *) &serv_addr, sizeof(serv_adsdr));
+        bzero((char *) &serv_addr, sizeof(serv_addr));
         portno = atoi(argv[1]);
 
         serv_addr.sin_family = AF_INET;
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
         dup(fd_[1]);
         close(fd_[1]);
         close(fd_[0]);
-        execl("/comp/105/bin/nml", "/comp/105/bin/nml", NULL);
+        execl("/usr/sup/bin/sml", "/usr/sup/bin/sml", NULL);
     }
 }
 
