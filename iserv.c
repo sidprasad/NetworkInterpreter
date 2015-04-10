@@ -22,7 +22,7 @@
 #include <fcntl.h>
 #include <sys/time.h>
 
-
+FILE *child_in; //input into child
 int int_pid;
 int hsize = 6;
 void service_client(int);
@@ -66,7 +66,10 @@ void write_to_all() {
     int i, read_len;
     char out[400];
     bzero((char *)&out, 400);
+
+    //This step is going to be the issue
     read_len = read(int_pid, out, 400);
+    //
     header ack;
     ack.type = 2;
     ack.len = read_len;
@@ -160,6 +163,7 @@ void read_socks() {
 int main(int argc, char *argv[])
 {
     int fd_[2];
+    pipe(fd_);
     int newsockfd, portno, i;
     int num_socks, numsocks; /* Holds the number of sockets ready for reading */
     struct sockaddr_in serv_addr, cli_addr;
@@ -177,6 +181,7 @@ int main(int argc, char *argv[])
 
     if(int_pid = fork()) {
 
+        child_in = fdopen(fd_[1], "w");
         /* Set socket so that it is non-blocking */ 
         bzero((char *) &serv_addr, sizeof(serv_addr));
         portno = atoi(argv[1]);
@@ -222,11 +227,11 @@ int main(int argc, char *argv[])
         return 0; 
     } else {
 
-        close(1);
-        dup(fd_[1]);
+        close(0);
+        dup(fd_[0]);
         close(fd_[1]);
         close(fd_[0]);
-        execl("/usr/sup/bin/sml", "/usr/sup/bin/sml", NULL);
+        execl("/comp/105/bin/uscheme", "/comp/105/bin/uscheme", NULL);
     }
 }
 
@@ -237,7 +242,10 @@ void service_client(int index) {
     int temp, i;
     int rd = 0;
     char msg[400];
+    char final[401];
     bzero((char *) &msg, 400);
+    bzero((char *) &final, 401);
+
     header hd;
 
     int read_s = read(connectlist[index], &hd, hsize);
@@ -266,23 +274,29 @@ void service_client(int index) {
             printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
             c_error(index);
             return;
-        } 
+        }
+        printf("Received string: %s\n", msg); 
     }
         // type 1 is to connect
         if(hd.type == 1) {
                        
             send_ack(index); 
         //Type 3 is interpreter command
-        } else if (hd.type == 3) {
+        } else if (hd.type == 3 && (hd.len > 0)) {
 
                 if(connectlist[index]) {                                  
                                 
                     header ack; 
                     ack.type = 4;
                     ack.len = 0;
-                    write(connectlist[index], &ack, 6);         
-                    write(int_pid, msg, strlen(msg));
-                    write_to_all();
+                    write(connectlist[index], &ack, 6);
+                    
+                                        
+                    strcpy(final, (char *)strcat(msg, "\n"));
+                    //fwrite(final, strlen(final), 1, child_in);  
+                    fprintf(child_in, "(+ 5 6)\n");     
+//                    write(int_pid, msg, strlen(msg));
+                    //write_to_all();
 
                 }
                 else {

@@ -29,6 +29,7 @@ int hsize = 6;
 
 int main(int argc, char *argv[])
 {
+    FILE *child_out;
     FILE *child_in;
     int fd_[2];
     pipe(fd_);
@@ -39,42 +40,44 @@ int main(int argc, char *argv[])
 
     if(int_pid = fork()) {
 
-        //This connects parent stdout to child stdin
-        //close(1);
-        //dup(fd_[1]);
-        //close(fd_[1]);
-        //close(fd_[0]);
 
-        child_in = fdopen(fd_[0], "r");
-        close(fd_[1]);
+        //child_out = fdopen(fd_[0], "r");
+        child_in = fdopen(fd_[1], "w");
+        
+        close(fd_[0]);
         char buff[512];
         
-        while(1) {
-        
-            //fprintf(stdout, "(+ 6 3)\n");
+        char* msg = malloc(512);
+        fgets(buff, 256, stdin);
+        printf(buff);
+        fwrite(buff, strlen(buff), 1, child_in);
+        fprintf(child_in, "(define x (y) (+ y 1))");
+        fprintf(child_in, "(x 9)\n");
+       /* while(1) {
+            bzero(msg, 512); 
             bzero(buff, 512);
-            //fprintf(stderr, "Sent\n");
-            fgets(buff, 22, child_in);
-            //if( n < 0) {
-              //  printf("PROBLEM\n");
-           // }
-            fprintf(stderr, "Intepreter says: %s\n", buff);
+            //fprintf(stdout, "Give me a command: \n");
+            fgets(buff, 256,  stdin);
+            msg = strcat(buff, "\n");
             
-            //bzero(buff, 512);
-            //printf("Input please: ");
-            //fgets(buff, 255, stdin);
-            
-            //write(int_pid, buff, 512);
-        }
+        }*/
 
         return 0; 
     } else {
 
+       // HOPEFULLY, this will connect parents stdout to childs stdin 
+       close(0);
+       dup(fd_[0]);
+
+
         // This connects childs stdout to parent stdin
-        close(1);
-        dup(fd_[1]);
+        //close(1);
+        //dup(fd_[1]);
         close(fd_[1]);
         close(fd_[0]);
+        char buff[500];
+        
+
         execl("/comp/105/bin/uscheme", "/comp/105/bin/uscheme", NULL);
     }
 }

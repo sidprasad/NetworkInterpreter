@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
     }
 
         //Sending connect message
-        hd.type = 1;
-        hd.length = 0;
+        hd.type = htons(1);
+        hd.length = htonl(0);
         n = write(sockfd, &hd, 6);
         int sn = 0;
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         char temp[100];
 
         read(sockfd, &ack, 6);
-        printf("Received ack with type %d\n", ack.type); 
+        printf("Received ack with type %d\n", htons(ack.type)); 
     
     while (sn >= 0) {
       
@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
         fgets(buffer, 255, stdin);
 
         header ex;
-        ex.type = 3;
-        ex.length = strlen(buffer);
+        ex.type = htons(3);
+        ex.length = htonl(strlen(buffer));
 
         sn = write(sockfd, &ex, 6);
         write(sockfd, buffer, strlen(buffer));
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
         }
 
         sn = read(sockfd, &ack, 6);
-       sn = read(sockfd, interpreter_msg, ack.length);
+       sn = read(sockfd, interpreter_msg, htonl(ack.length));
         if (sn < 0) {
             error("ERROR reading from socket");
         } else
