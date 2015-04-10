@@ -1,5 +1,5 @@
 #Networks - Comp 112 Final Project
-### 10th April 2015
+### Shea Clark-Tiesche, Siddhartha Prasad, and Nikhil Shinday
 
 This repository contains a *uScheme* interpreter that can be used by several
 clients across a network. All clients share an environment, and need to be
@@ -14,15 +14,22 @@ Operating Systems 'dup'ing issue with a non-trivial best effort solution.
 
 ## Current Protocol
 
+When the server communicates with the client (and vice versa), we have the
+following basic protocol.
+
+Type   | From  | To   | Meaning|
+------ |-------|------|--------
+1      |Client |Server|Request to connect|
+2      |Server |Client|Update to environment|
+3      |Client |Server|Interpreter command|
+4      |Server |Client|Interpreter command ACK |
 
 ## Future Plans
 
+- Better client design
+- Possibly distributed system
+- 
 
-Todo:
-
-- Build client
-- Choose better interpreter
-- Eliminate activitylist and idlist
 
 
 
