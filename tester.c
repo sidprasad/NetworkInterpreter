@@ -41,26 +41,20 @@ int main(int argc, char *argv[])
     if(int_pid = fork()) {
 
 
-        //child_out = fdopen(fd_[0], "r");
+        child_out = fdopen(fd_[0], "r");
         child_in = fdopen(fd_[1], "w");
         
-        close(fd_[0]);
+       // close(fd_[0]);
         char buff[512];
         
-        char* msg = malloc(512);
+        bzero(buff, 512);
         fgets(buff, 256, stdin);
-        printf(buff);
         fwrite(buff, strlen(buff), 1, child_in);
-        fprintf(child_in, "(define x (y) (+ y 1))");
-        fprintf(child_in, "(x 9)\n");
-       /* while(1) {
-            bzero(msg, 512); 
-            bzero(buff, 512);
-            //fprintf(stdout, "Give me a command: \n");
-            fgets(buff, 256,  stdin);
-            msg = strcat(buff, "\n");
-            
-        }*/
+        fflush(child_in);
+        bzero(buff, 512);
+        fgets(buff, 256, child_out);
+        printf("Parent got: %s\n");
+        fflush(stdout);
 
         return 0; 
     } else {
@@ -71,14 +65,19 @@ int main(int argc, char *argv[])
 
 
         // This connects childs stdout to parent stdin
-        //close(1);
-        //dup(fd_[1]);
+        close(1);
+        dup(fd_[1]);
         close(fd_[1]);
         close(fd_[0]);
+
         char buff[500];
         
-
-        execl("/comp/105/bin/uscheme", "/comp/105/bin/uscheme", NULL);
+        fgets(buff, 256, stdin);
+        fprintf(stderr, "Receiver got %s\n", buff);
+        fflush(stderr);
+        fprintf(stdout, "Receiver got %s\n", buff);
+        fflush(stdout);
+        
     }
 }
 
