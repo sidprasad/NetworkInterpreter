@@ -46,8 +46,7 @@ fd_set socks;
 void send_ack(int i) {
 
     header ack;
-    ack.type = 2;
-    ack.type = htons(ack.type);
+    ack.type = htons(2);
     ack.len = 0;
    
     write(connectlist[i], &ack, 6);
@@ -70,7 +69,7 @@ void write_to_all() {
    // read_len = read(int_pid, out, 400);
     //
     header ack;
-    ack.type = 2;
+    ack.type = htons(2);
     ack.len = strlen("Placeholder");
     for (i=0; i<clsize; i++) {
         if (connectlist[i] != 0) {
@@ -284,7 +283,7 @@ void service_client(int index) {
                 if(connectlist[index]) {                                  
                                 
                     header ack; 
-                    ack.type = 4;
+                    ack.type = htons(4);
                     ack.len = 0;
                     write(connectlist[index], &ack, 6);
                     
@@ -294,7 +293,7 @@ void service_client(int index) {
                     fflush(child_in);  
                     //fprintf(child_in, "(+ 5 6)\n");     
 //                    write(int_pid, msg, strlen(msg));
-                    //write_to_all();
+                    write_to_all();
 
                 }
                 else {

@@ -6,6 +6,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
+#include <sys/select.h>
+#include <sys/time.h>
+#include <unistd.h>
+
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -25,8 +29,14 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[256];
+    fd_set readfd, temp_readfd;
     header hd, msg;
     
+    FD_ZERO(&readfd);
+    FD_ZERO(&temp_readfd);
+
+
+
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
        exit(0);
@@ -55,36 +65,63 @@ int main(int argc, char *argv[])
         error("ERROR connecting");
     }
 
-        //Sending connect message
-        hd.type = htons(1);
-        hd.length = htonl(0);
-        n = write(sockfd, &hd, 6);
-        int sn = 0;
+    FD_SET(sockfd, &readfd);
+    FD_SET(0, &readfd);
 
-        header ack;
-        char interpreter_msg[400];
-        char temp[100];
+    //Sending connect message
+    hd.type = htons(1);
+    hd.length = htonl(0);
+    n = write(sockfd, &hd, 6);
+    int sn = 0;
 
-        read(sockfd, &ack, 6);
-        printf("Received ack with type %d\n", ntohs(ack.type)); 
+    header ack;
+    char interpreter_msg[400];
+    char temp[100];
+
+    read(sockfd, &ack, 6);
+    printf("Received ack with type %d\n", ntohs(ack.type)); 
     
     while (sn >= 0) {
-      
-        bzero(buffer, 256);
+        temp_readfd = readfd;        
         printf(">: ");
-        fgets(buffer, 255, stdin);
+        sn = select(sockfd+1, &temp_readfd, NULL, NULL, NULL);
+        // means that there's input waiting to be read on stdin or the socket
+        if (FD_ISSET(sockfd, &temp_readfd)) { 
+            bzero(buffer, 256);
+            //read the ack then message
+            header ack;
+            sn = read(sockfd, &ack, 6);
+            if (ntohs(ack.type) == 2) { 
+                sn = read(sockfd, buffer, 256); 
+                if (sn < 0) 
+                    error("ERROR writing to socket");
+                printf("%s", buffer); 
+            }
+            
+        // something's waiting to be read from the socket
+        } else if (FD_ISSET(0, &temp_readfd)) {
+            bzero(buffer, 256);
+            fgets(buffer, 255, stdin);
+            
+            header ex;
+            ex.type = htons(3);
+            ex.length = htonl(strlen(buffer));
 
-        header ex;
-        ex.type = htons(3);
-        ex.length = htonl(strlen(buffer));
-
-        sn = write(sockfd, &ex, 6);
-        write(sockfd, buffer, strlen(buffer));
-
-        if (sn < 0) {
-            error("ERROR writing to socket");
+            sn = write(sockfd, &ex, 6);
+            if (sn < 0) 
+                error("ERROR writing to socket");
+            
+            sn = write(sockfd, buffer, strlen(buffer));
+            if (sn < 0) 
+                error("ERROR writing to socket");
+            sn = read(sockfd, &ex, 6);
+            // fprintf(stderr, "%d\n", ex.type); 
+            if (ntohs(ex.type) != 4) {
+                error("ERROR ack not correct for client command send");
+            }
         }
 
+        
        /* sn = read(sockfd, &ack, 6);
         printf("ACKTYPE: %d\n", ntohs(ack.type));
      
