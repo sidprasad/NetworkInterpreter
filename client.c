@@ -9,10 +9,7 @@
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
-    char source[20];
-    char dest[20];
     unsigned int length;
-    unsigned int message_id; 
 };
 typedef struct __attribute__((__packed__)) header header;
 
@@ -58,52 +55,46 @@ int main(int argc, char *argv[])
         error("ERROR connecting");
     }
 
-    //Sending hello
+        //Sending connect message
         hd.type = 1;
-        strcpy(hd.source, argv[3]);
-        hd.dest[0] = '\0'; 
         hd.length = 0;
-        hd.message_id = 0;
-        n = write(sockfd, &hd, 50);
+        n = write(sockfd, &hd, 6);
+        int sn = 0;
 
-
-        header ack, clist;
-        char client_list[400];
+        header ack;
+        char interpreter_msg[400];
         char temp[100];
 
-        read(sockfd, &ack, 50);
-        read(sockfd, &clist, 50);
-        read(sockfd, &client_list, clist.length);
-        
+        read(sockfd, &ack, 6);
+        printf("Received ack with type %d\n", ack.type); 
     
-  //  while (1) {
-        printf("Enter Message: ");
+    while (sn >= 0) {
+      
+        bzero(buffer, 256);
+        printf(">: ");
         fgets(buffer, 255, stdin);
 
         header ex;
-        ex.type = 6;
-        strcpy(ex.source, argv[3]);
-        strcpy(ex.dest, "Server");
-        ex.length = 0;
-        ex.message_id = 0;
+        ex.type = 3;
+        ex.length = strlen(buffer);
 
-    //    write(sockfd, &ex, 50);
-    //    write(sockfd, "", 0);
+        sn = write(sockfd, &ex, 6);
+        write(sockfd, buffer, strlen(buffer));
 
-        if (n < 0) {
+        if (sn < 0) {
             error("ERROR writing to socket");
         }
 
-       // bzero(buffer, 256);
-      //  n = read(sockfd, buffer, 255);
-
-        if (n < 0) {
+        sn = read(sockfd, &ack, 6);
+       sn = read(sockfd, interpreter_msg, ack.len);
+        if (sn < 0) {
             error("ERROR reading from socket");
-        }
+        } else
+            printf(">: %s \n", interpreter_msg);
 
-        //printf("%s\n", buffer);
-  //  }
 
+    }
+    printf("Exiting\n");
     close(sockfd);
 
     return 0;
