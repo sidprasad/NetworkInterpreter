@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[256];
-    header hd;
+    header hd, msg;
     
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         char temp[100];
 
         read(sockfd, &ack, 6);
-        printf("Received ack with type %d\n", htons(ack.type)); 
+        printf("Received ack with type %d\n", ntohs(ack.type)); 
     
     while (sn >= 0) {
       
@@ -85,13 +85,19 @@ int main(int argc, char *argv[])
             error("ERROR writing to socket");
         }
 
+       /* sn = read(sockfd, &ack, 6);
+        printf("ACKTYPE: %d\n", ntohs(ack.type));
+     
         sn = read(sockfd, &ack, 6);
-       sn = read(sockfd, interpreter_msg, htonl(ack.length));
+        sn = read(sockfd, interpreter_msg, ntohl(ack.length));
+    
         if (sn < 0) {
             error("ERROR reading from socket");
-        } else
-            printf(">: %s \n", interpreter_msg);
+        } else {
+           printf("Type: %d >: %s \n", ntohs(ack.type), interpreter_msg);
 
+        }
+*/
 
     }
     printf("Exiting\n");

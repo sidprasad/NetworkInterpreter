@@ -38,7 +38,6 @@ void c_error(int i);
 
 int sockfd, hisockfd;
 int connectlist[200*sizeof(int)];
-int activitylist[200*sizeof(int)];
 
 
 int clsize = 200;
@@ -68,15 +67,15 @@ void write_to_all() {
     bzero((char *)&out, 400);
 
     //This step is going to be the issue
-    read_len = read(int_pid, out, 400);
+   // read_len = read(int_pid, out, 400);
     //
     header ack;
     ack.type = 2;
-    ack.len = read_len;
+    ack.len = strlen("Placeholder");
     for (i=0; i<clsize; i++) {
         if (connectlist[i] != 0) {
             write(connectlist[i], &ack, 6);
-            write(connectlist[i], out, read_len);
+            write(connectlist[i],"Placeholder" , read_len);
         }
     }
     fprintf(stdout, "-> %s\n",out);
@@ -168,7 +167,6 @@ int main(int argc, char *argv[])
     int num_socks, numsocks; /* Holds the number of sockets ready for reading */
     struct sockaddr_in serv_addr, cli_addr;
     struct timeval timeout; /* timeout for select */    
-    bzero((int *) &activitylist, sizeof(activitylist));
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
         exit(1);
@@ -256,7 +254,6 @@ void service_client(int index) {
         close(connectlist[index]);
 
         connectlist[index] = 0;
-        activitylist[index] = 0;
     } else {
 
     hd.type = ntohs(hd.type);   
