@@ -12,6 +12,9 @@ connected to the parent server to access it.
 issue with sending messages back to each client from the server. This is an
 Operating Systems 'dup'ing issue with a non-trivial best effort solution.
 
+- Currently using a simple ACKless client for testing purposes. Eventual
+client will look like client.c
+
 ## Current Protocol
 
 When the server communicates with the client (and vice versa), we have the
