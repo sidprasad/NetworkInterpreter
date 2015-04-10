@@ -29,7 +29,9 @@ int hsize = 6;
 
 int main(int argc, char *argv[])
 {
+    FILE *child_in;
     int fd_[2];
+    pipe(fd_);
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
         exit(1);
@@ -37,27 +39,43 @@ int main(int argc, char *argv[])
 
     if(int_pid = fork()) {
 
+        //This connects parent stdout to child stdin
+        //close(1);
+        //dup(fd_[1]);
+        //close(fd_[1]);
+        //close(fd_[0]);
+
+        child_in = fdopen(fd_[0], "r");
+        close(fd_[1]);
         char buff[512];
         
-        sleep(2);
         while(1) {
+        
+            //fprintf(stdout, "(+ 6 3)\n");
             bzero(buff, 512);
-            read(int_pid,  buff, 512);
-            printf(">: %s\n", buff);
-
-            bzero(buff, 512);
-            fgets(buff, 512, stdin);
+            //fprintf(stderr, "Sent\n");
+            fgets(buff, 22, child_in);
+            //if( n < 0) {
+              //  printf("PROBLEM\n");
+           // }
+            fprintf(stderr, "Intepreter says: %s\n", buff);
             
-            write(int_pid, buff, 512);
+            //bzero(buff, 512);
+            //printf("Input please: ");
+            //fgets(buff, 255, stdin);
+            
+            //write(int_pid, buff, 512);
         }
 
         return 0; 
     } else {
+
+        // This connects childs stdout to parent stdin
         close(1);
         dup(fd_[1]);
         close(fd_[1]);
         close(fd_[0]);
-        execl("/usr/sup/bin/sml", "/usr/sup/bin/sml", NULL);
+        execl("/comp/105/bin/uscheme", "/comp/105/bin/uscheme", NULL);
     }
 }
 
