@@ -28,7 +28,21 @@ Type   | From  | To   | Meaning|
 
 - Better client design
 - Possibly distributed system
-- 
+- Local environment
+
+## Usage
+
+Client
+
+    gcc -g client.c -o client -lnsl
+    ./client <hostname> <portnumber>
+
+Server
+    gcc -g iserv.c -o server -lnsl
+    ./server <portnumber>
+
+
+
 
 
 
