@@ -38,6 +38,7 @@ Client
     ./client <hostname> <portnumber>
 
 Server
+
     gcc -g iserv.c -o server -lnsl
     ./server <portnumber>
 
