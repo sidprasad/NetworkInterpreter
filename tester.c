@@ -49,11 +49,13 @@ int main(int argc, char *argv[])
         
         bzero(buff, 512);
         fgets(buff, 256, stdin);
+        fprintf(stdout, "got %s\n", buff);
+        fflush(stdout);
         fwrite(buff, strlen(buff), 1, child_in);
         fflush(child_in);
         bzero(buff, 512);
         fgets(buff, 256, child_out);
-        printf("Parent got: %s\n");
+        fprintf(stdout, "Parent got: %s\n");
         fflush(stdout);
 
         return 0; 
