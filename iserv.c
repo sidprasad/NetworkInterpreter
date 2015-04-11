@@ -342,6 +342,12 @@ void service_client(int index) {
                     c_error(index);
                 }
         //Else problem!
+        } else if (hd.type == 5) {
+            fprintf(stderr, "Graceful exit with user %d\n", index);
+            //Send copy of uScheme interpreter and then log
+            close(connectlist[index]);
+            connectlist[index] = 0;
+
         } else {
             fprintf(stderr, "Unrecognized type %hu\n", hd.type);
             c_error(index);

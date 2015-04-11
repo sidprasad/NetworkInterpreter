@@ -33,6 +33,13 @@ Message Type   | From  | To   | Meaning|
 2              |Server |Client|Update to environment|
 3              |Client |Server|Interpreter command|
 4              |Server |Client|Interpreter command ACK |
+5              |Client |Server|Graceful exit|
+
+
+A graceful exit provides the user with a copy of the interpreter as
+well as a log with all the commands provided to the interpreter.
+This can be used by a client to create an offline interpreter with the
+same current environment.
 
 ## Future Plans
 
