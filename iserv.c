@@ -1,6 +1,8 @@
 /* Comp 112 Assignment 5
  * 
  * Siddhartha Prasad
+ * Nikhil Shinday
+ * Shea Clark-Tiesche
  *
  * This assignment implements a simple distributed interpreter
  * 
@@ -291,8 +293,6 @@ void service_client(int index) {
                     strcpy(final, (char *)strcat(msg, "\n"));
                     fwrite(final, strlen(final), 1, child_in);
                     fflush(child_in);  
-                    //fprintf(child_in, "(+ 5 6)\n");     
-//                    write(int_pid, msg, strlen(msg));
                     write_to_all();
 
                 }
