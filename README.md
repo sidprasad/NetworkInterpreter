@@ -1,5 +1,5 @@
 #Networks - Comp 112 Final Project
-### Shea Clark-Tiesche, Siddhartha Prasad, and Nikhil Shinday
+### Shea Clark-Tieche, Siddhartha Prasad, and Nikhil Shinday
 
 10th April 2015
 
