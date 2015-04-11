@@ -11,7 +11,7 @@
  *  Run with port number as a command line argument
  * 
 */
-
+#include <signal.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +25,11 @@
 #include <sys/time.h>
 
 FILE *child_in; //input into child
+
+//FILE* child_out;
+
+FILE *ilog;
+
 int int_pid;
 int hsize = 6;
 void service_client(int);
@@ -54,6 +59,20 @@ void send_ack(int i) {
     write(connectlist[i], &ack, 6);
 
 }
+
+void sig_handler(int signum) {
+
+    (void) signum;
+    fclose(ilog);
+    fclose(child_in);
+    kill(int_pid, 9);   //Killing interpreter
+
+    fprintf(stderr, "Closing server\n");
+    exit(0);
+}
+
+
+
 
 void error(const char *msg)
 {
@@ -162,6 +181,7 @@ void read_socks() {
 
 int main(int argc, char *argv[])
 {
+
     int fd_[2];
     pipe(fd_);
     int newsockfd, portno, i;
@@ -179,6 +199,15 @@ int main(int argc, char *argv[])
         error("ERROR opening socket");
 
     if(int_pid = fork()) {
+
+
+        /*** Set up a signal handler for Ctr-C ***/
+        struct sigaction act;
+        act.sa_handler = &sig_handler;
+        sigaction(SIGINT, &act, NULL);
+        /****************************************/
+
+
 
         child_in = fdopen(fd_[1], "w");
         /* Set socket so that it is non-blocking */ 
@@ -204,6 +233,16 @@ int main(int argc, char *argv[])
         for (i = 0; i < 200; i++) {
             connectlist[i] = 0;
         }
+
+        /* We set up a log of all commands sent as a file */
+
+        ilog = fopen("logfile.scm", "w");
+
+
+        /****************************************************/
+
+
+
 
         /* Now loop forever */ 
         while(1) {
@@ -292,7 +331,9 @@ void service_client(int index) {
                                         
                     strcpy(final, (char *)strcat(msg, "\n"));
                     fwrite(final, strlen(final), 1, child_in);
+                    fwrite(final, strlen(final), 1, ilog);
                     fflush(child_in);  
+                    fflush(ilog);
                     write_to_all();
 
                 }
