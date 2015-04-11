@@ -30,6 +30,8 @@ FILE *child_in; //input into child
 
 FILE *ilog;
 
+char *interpreter_address = "interpreters/uscheme";
+
 int int_pid;
 int hsize = 6;
 void service_client(int);
@@ -269,7 +271,7 @@ int main(int argc, char *argv[])
         dup(fd_[0]);
         close(fd_[1]);
         close(fd_[0]);
-        execl("/comp/105/bin/uscheme", "/comp/105/bin/uscheme", NULL);
+        execl(interpreter_address, interpreter_address, NULL);
     }
 }
 
