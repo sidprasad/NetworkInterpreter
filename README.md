@@ -34,7 +34,8 @@ Message Type   | From  | To   | Meaning|
 3              |Client |Server|Interpreter command|
 4              |Server |Client|Interpreter command ACK |
 5              |Client |Server|Graceful exit|
-
+6              |Server |Client| Interpreter file|
+7              |Server |Client| logfile|
 
 A graceful exit provides the user with a copy of the interpreter as
 well as a log with all the commands provided to the interpreter.
