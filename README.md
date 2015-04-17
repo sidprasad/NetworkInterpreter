@@ -9,6 +9,13 @@ several clients across a network. All clients share an environment, and need to
 
     Github repository: https://github.com/sidprasad/NetworkingInterpreter
 
+## Tasks
+
+- Nikhil: Request types 5,6,7. Select call for iclient.c
+
+- Shea: Buffering on server i/o (TCP calls fragment)
+
+- Siddhartha: Look at 'expect' to replace 'dup'ing. This will give two-way communication.
 
 ## Current Issues
 
