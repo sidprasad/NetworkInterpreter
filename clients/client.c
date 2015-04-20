@@ -9,7 +9,7 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <unistd.h>
-
+#include "../file_transfer/ftrans.c"
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -80,62 +80,67 @@ int main(int argc, char *argv[])
 
     read(sockfd, &ack, 6);
     printf("Received ack with type %d\n", ntohs(ack.type)); 
-    
+    fprintf(stdout, ">: ");
+    fflush(stdout);
     while (sn >= 0) {
-        temp_readfd = readfd;        
-        printf(">: ");
-        sn = select(sockfd+1, &temp_readfd, NULL, NULL, NULL);
+        temp_readfd = readfd;
+        
         // means that there's input waiting to be read on stdin or the socket
+        sn = select(sockfd+1, &temp_readfd, NULL, NULL, NULL);
+        // check first for the socket
         if (FD_ISSET(sockfd, &temp_readfd)) { 
             bzero(buffer, 256);
             //read the ack then message
             header ack;
             sn = read(sockfd, &ack, 6);
-            if (ntohs(ack.type) == 2) { 
-                sn = read(sockfd, buffer, 256); 
-                if (sn < 0) 
-                    error("ERROR writing to socket");
-                printf("%s", buffer); 
-            }
             
-        // something's waiting to be read from the socket
+            switch(ntohs(ack.type)) {
+            case 2: 
+                // an update to the environment -- just print out the string
+                break;
+            case 4: 
+                // interpreter command ack
+                fprintf(stdout, ">: ");
+                fflush(stdout);
+                break;
+            case 6: 
+                // send the interpreter file
+                printf("got into case 6\n");
+                FILE_RECV(sockfd, "interpreter");
+                break;
+            case 7: 
+                // send the logfile
+                printf("got into case 7\n");
+                FILE_RECV(sockfd, "logfile");
+                system("chmod +x interpreter; ./interpreter < logfile");
+                break;
+            default: 
+                fprintf(stderr, "ack not recognized\n");
+                fflush(stderr);
+            }
+        // something's waiting to be read from stdin
         } else if (FD_ISSET(0, &temp_readfd)) {
             bzero(buffer, 256);
-            fgets(buffer, 255, stdin);
-            
+            fgets(buffer, 256, stdin);
+            printf("%s\n", buffer);
             header ex;
-            ex.type = htons(3);
-            ex.length = htonl(strlen(buffer));
+            if (strcmp("(local)\n", buffer) == 0) {
+                ex.type = htons(5);
+                ex.length = 0;
+                
+                sn = write(sockfd, &ex, 6);
+                if (sn < 0) error("ERROR writing to socket");
+            } else {
+                ex.type = htons(3);
+                ex.length = htonl(strlen(buffer));
 
-            sn = write(sockfd, &ex, 6);
-            if (sn < 0) 
-                error("ERROR writing to socket");
-            
-            sn = write(sockfd, buffer, strlen(buffer));
-            if (sn < 0) 
-                error("ERROR writing to socket");
-            sn = read(sockfd, &ex, 6);
-            // fprintf(stderr, "%d\n", ex.type); 
-            if (ntohs(ex.type) != 4) {
-                error("ERROR ack not correct for client command send");
+                sn = write(sockfd, &ex, 6);
+                if (sn < 0) error("ERROR writing to socket");
+                
+                sn = write(sockfd, buffer, strlen(buffer));
+                if (sn < 0) error("ERROR writing to socket");
             }
         }
-
-        
-       /* sn = read(sockfd, &ack, 6);
-        printf("ACKTYPE: %d\n", ntohs(ack.type));
-     
-        sn = read(sockfd, &ack, 6);
-        sn = read(sockfd, interpreter_msg, ntohl(ack.length));
-    
-        if (sn < 0) {
-            error("ERROR reading from socket");
-        } else {
-           printf("Type: %d >: %s \n", ntohs(ack.type), interpreter_msg);
-
-        }
-*/
-
     }
     printf("Exiting\n");
     close(sockfd);

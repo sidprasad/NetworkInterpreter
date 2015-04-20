@@ -1,0 +1,1 @@
+gcc -g -lnsl -o serv ftransserv.c

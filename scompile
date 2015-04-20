@@ -1,0 +1,5 @@
+#!/bin/bash
+gcc -g iserv.c -o ni_server -lnsl
+
+
+

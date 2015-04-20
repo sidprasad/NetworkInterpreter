@@ -23,6 +23,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include "./file_transfer/ftrans.c"
 
 FILE *child_in; //input into child
 
@@ -170,10 +171,8 @@ void read_socks() {
     /* If a listening socket is part of the fd_set, we accept a new connection*/
     if (FD_ISSET(sockfd, &socks))
         new_connection();
-    
     /* Now go through the sockets in the list, if anything happened,
      * deal with them */
-
     for(i = 0; i < clsize; i++) {
         if(FD_ISSET(connectlist[i], &socks)) {
             service_client(i);
@@ -322,7 +321,6 @@ void service_client(int index) {
             send_ack(index); 
         //Type 3 is interpreter command
         } else if (hd.type == 3 && (hd.len > 0)) {
-
                 if(connectlist[index]) {                                  
                                 
                     header ack; 
@@ -347,6 +345,17 @@ void service_client(int index) {
         } else if (hd.type == 5) {
             fprintf(stderr, "Graceful exit with user %d\n", index);
             //Send copy of uScheme interpreter and then log
+            //
+            header ack;
+            ack.type = htons(6);
+            ack.len = 0;
+            write(connectlist[index], &ack, 6);
+            if (FILE_SEND(connectlist[index], "/intepreters/uscheme") == 0) {
+                ack.type = htons(7);
+                write(connectlist[index], &ack, 6);
+                if (FILE_SEND(connectlist[index], "logfile.scm") == 0) {}
+                else  printf("transferring log file failed\n");
+            } else printf("transferring intepreter file failed\n"); 
             close(connectlist[index]);
             connectlist[index] = 0;
 

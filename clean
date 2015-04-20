@@ -1,0 +1,18 @@
+log_output="$(date) "
+
+function kill_pids() {
+	for i in $( ps -ef | grep "$1" | grep -v grep | awk -F" " '{print $2}' )
+		do 
+		kill $i  
+		log_output+="$i "
+	done
+}
+
+kill_pids ./ni_server
+kill_pids ./ni_client
+log_output+="\n"
+printf "$log_output" >> .clean_log
+rm *~ 2> /dev/null
+rm .nfs* 2> /dev/null
+
+
