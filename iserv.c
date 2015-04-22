@@ -283,11 +283,12 @@ void service_client(int index) {
 
     int temp, i;
     int rd = 0;
-    char msg[400];
-    char final[401];
+    //char msg[400];
+    //char final[401];
     char *msgShea;
-    bzero((char *) &msg, 400);
-    bzero((char *) &final, 401);
+    char *finalShea;
+    //bzero((char *) &msg, 400);
+    //bzero((char *) &final, 401);
 
     header hd;
     
@@ -321,7 +322,7 @@ void service_client(int index) {
             c_error(index);
             return;
         }
-        printf("Received string: %s\n", msg); 
+        printf("Received string: %s\n", msgShea); 
     }
         // type 1 is to connect
         if(hd.type == 1) {
@@ -335,11 +336,13 @@ void service_client(int index) {
                     ack.type = htons(4);
                     ack.len = 0;
                     write(connectlist[index], &ack, 6);
-                    
-                                        
-                    strcpy(final, (char *)strcat(msg, "\n"));
-                    fwrite(final, strlen(final), 1, child_in);
-                    fwrite(final, strlen(final), 1, ilog);
+                    finalShea = malloc(rd + 1);
+                    strcpy(finalShea, (char *)strcat(msgShea, "\n"));                    
+                    printf("FINAL: %s\n", finalShea);
+
+                  //  strcpy(final, (char *)strcat(msg, "\n"));
+                    fwrite(finalShea, strlen(finalShea), 1, child_in);
+                    fwrite(finalShea, strlen(finalShea), 1, ilog);
                     fflush(child_in);  
                     fflush(ilog);
                     write_to_all();
