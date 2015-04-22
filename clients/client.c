@@ -133,12 +133,18 @@ int main(int argc, char *argv[])
             } else {
                 ex.type = htons(3);
                 ex.length = htonl(strlen(buffer));
-
+            /*TESTING WITH LARGE MSG SIZES BELOW*/
                 sn = write(sockfd, &ex, 6);
                 if (sn < 0) error("ERROR writing to socket");
-                
+                 
                 sn = write(sockfd, buffer, strlen(buffer));
-                if (sn < 0) error("ERROR writing to socket");
+                if (sn < 0) error("ERROR writing to socket");/*
+                char *threehuno = "ABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXY\n";
+                int strLen = strlen(threehuno) + 1;
+                ex.length = htonl(strLen);
+                printf("SIZE IS: %d\n", strLen);
+                sn = write(sockfd, &ex, 6);
+                sn = write(sockfd, threehuno, strLen);   */
             }
         }
     }
