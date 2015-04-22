@@ -26,9 +26,7 @@
 #include "./file_transfer/ftrans.c"
 
 FILE *child_in; //input into child
-
-//FILE* child_out;
-
+FILE* intermediate;
 FILE *ilog;
 
 char *interpreter_address = "interpreters/uscheme";
@@ -36,6 +34,7 @@ char *interpreter_address = "interpreters/uscheme";
 int int_pid;
 int hsize = 6;
 void service_client(int);
+int readMsg(int, int, char **); 
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -69,12 +68,10 @@ void sig_handler(int signum) {
     fclose(ilog);
     fclose(child_in);
     kill(int_pid, 9);   //Killing interpreter
-
+    remove("intermediate");
     fprintf(stderr, "Closing server\n");
     exit(0);
 }
-
-
 
 
 void error(const char *msg)
@@ -83,25 +80,50 @@ void error(const char *msg)
     exit(1);
 }
 
-
 void write_to_all() {
-    int i, read_len;
-    char out[400];
-    bzero((char *)&out, 400);
 
-    //This step is going to be the issue
-   // read_len = read(int_pid, out, 400);
-    //
-    header ack;
-    ack.type = htons(2);
-    ack.len = strlen("Placeholder");
-    for (i=0; i<clsize; i++) {
-        if (connectlist[i] != 0) {
-            write(connectlist[i], &ack, 6);
-            write(connectlist[i],"Placeholder" , read_len);
+    FILE *inter_in;
+    int fd[2];
+    pipe(fd);
+    int temp_pid;
+    if(temp_pid = fork()) {
+
+        //use out2 if you ever need to tail -2 again (ie non -q option)
+        inter_in = fdopen(fd[0], "r");
+        close(fd[1]);
+        char *out = NULL;
+        char *out2 = NULL;
+        size_t n = 400;
+        size_t n2 = 400;
+        getline(&out, &n, inter_in);
+       // getline(&out2, &n2, inter_in);
+        n = strlen(out);
+        int i;
+        header ack;
+        ack.type = htons(2);
+        ack.len = htonl(n);
+    
+        for (i=0; i<clsize; i++) {
+            if (connectlist[i] != 0) {
+            
+                fprintf(stderr, "Writing: %s to fd:%d with length %d \n",
+                 out, connectlist[i], n);
+                write(connectlist[i], &ack, 6);
+                write(connectlist[i], out, n);
+            }
         }
+
+    } else {
+        close(1);
+        dup(fd[1]);
+        close(fd[1]);
+        close(fd[0]);
+        execl("/usr/bin/tail", "/usr/bin/tail", "-1", "intermediate", NULL);
     }
-    fprintf(stdout, "-> %s\n",out);
+
+
+
+
 }
 
 
@@ -182,7 +204,6 @@ void read_socks() {
 
 int main(int argc, char *argv[])
 {
-
     int fd_[2];
     pipe(fd_);
     int newsockfd, portno, i;
@@ -198,6 +219,10 @@ int main(int argc, char *argv[])
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
         error("ERROR opening socket");
+
+    intermediate = fopen("intermediate", "a+");
+    setvbuf(intermediate, NULL, _IOLBF, BUFSIZ);
+    int inter_fd = fileno(intermediate); 
 
     if(int_pid = fork()) {
 
@@ -229,6 +254,9 @@ int main(int argc, char *argv[])
 
         /* We keep track of the highest socket fd*/
         hisockfd = sockfd;
+
+        /*Shea: why do we bzero connectionlist and then manually zero it? */
+
         bzero((char*)connectlist, sizeof(connectlist));
 
         for (i = 0; i < 200; i++) {
@@ -266,11 +294,16 @@ int main(int argc, char *argv[])
         return 0; 
     } else {
 
+        close(2);
+        dup(inter_fd);
+        close(1);
+        dup(inter_fd);
         close(0);
         dup(fd_[0]);
+        close(inter_fd);
         close(fd_[1]);
         close(fd_[0]);
-        execl(interpreter_address, interpreter_address, NULL);
+        execl(interpreter_address, interpreter_address, "-q",  NULL);
     }
 }
 
@@ -280,13 +313,11 @@ void service_client(int index) {
 
     int temp, i;
     int rd = 0;
-    char msg[400];
-    char final[401];
-    bzero((char *) &msg, 400);
-    bzero((char *) &final, 401);
+    char *msg;
+    char *final;
 
     header hd;
-
+    
     int read_s = read(connectlist[index], &hd, hsize);
    
     /* If an entire header is not read, we drop the connection */
@@ -299,15 +330,11 @@ void service_client(int index) {
 
     hd.type = ntohs(hd.type);   
     hd.len = ntohl(hd.len);
-    
-    if(hd.len > 400) {
-        printf("Message length too long (for now)!\n");
-        c_error(index);
-        return;
-    }
- 
+   
+    msg = malloc(hd.len);
+
     if(hd.len > 0) {
-        rd = read(connectlist[index], msg, 400);
+        rd = readMsg(index, hd.len, &msg);
         if(hd.len != rd) {
             printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
             c_error(index);
@@ -317,31 +344,45 @@ void service_client(int index) {
     }
         // type 1 is to connect
         if(hd.type == 1) {
-                       
-            send_ack(index); 
+            printf("Connected! Should send ack?\n"); 
+           //send_ack(index);
+           //
+           //
+           //
+           //
+           // NEED TO TALK ABOUT THIS
+           //
+           //
+           //
+           //
+           //
         //Type 3 is interpreter command
         } else if (hd.type == 3 && (hd.len > 0)) {
                 if(connectlist[index]) {                                  
                                 
                     header ack; 
                     ack.type = htons(4);
-                    ack.len = 0;
+                    ack.len = htonl(0);
                     write(connectlist[index], &ack, 6);
+                    final = malloc(rd + 1);
                     
-                                        
-                    strcpy(final, (char *)strcat(msg, "\n"));
+                    strcpy(final, (char *)strcat(msg, "\n"));                    
                     fwrite(final, strlen(final), 1, child_in);
                     fwrite(final, strlen(final), 1, ilog);
                     fflush(child_in);  
                     fflush(ilog);
-                    write_to_all();
 
+                    write_to_all();
                 }
                 else {
                     /* ERROR */
                     c_error(index);
                 }
         //Else problem!
+        } else if (hd.type == 3) {
+
+            printf("Disregarding empty message\n");
+
         } else if (hd.type == 5) {
             fprintf(stderr, "Graceful exit with user %d\n", index);
             //Send copy of uScheme interpreter and then log
@@ -365,5 +406,32 @@ void service_client(int index) {
         }
     }
 }
+
+int readMsg(int sock, int totalBytes, char **str)
+{
+    int bytesRead = 0;
+    int rd;
+    char *msg = *str;
+    /* This whileLoop ensures that all bytes are being read, even when read 
+     * does not get everything -- is this needed?*/
+    while (bytesRead < totalBytes) {
+        rd = read(connectlist[sock], msg + bytesRead, totalBytes - bytesRead);
+        if (rd < 1) {
+            fprintf(stderr, "Error Reading Data\n");
+            exit(1);
+        }
+        bytesRead += rd;
+    }
+    
+
+    return bytesRead;
+}
+
+
+
+
+
+
+
 
 

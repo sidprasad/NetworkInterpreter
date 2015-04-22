@@ -18,15 +18,45 @@ void error(const char *msg)
     perror(msg);
     exit(0);
 }
+int sockfd;
+
+void read_acks() {
+
+
+ /* Probably want a mutex lock or semaphore for both kinds of reads and writes*/
+    char buffer[256];
+    header ack;;
+
+    while(1) {
+        read(sockfd, &ack, 6);
+        bzero(buffer, 256);
+        
+        if(ntohs(ack.type) == 2) {
+            read(sockfd, &buffer, ntohl(ack.length));
+            printf(":> %s", buffer);
+        }else if(ntohs(ack.type) == 4) {
+            //Create local log here!! Alternately, use locks and then
+            //you can send an "accept dropped message"
+            fprintf(stderr, "Accept confirmed\n");
+        } else {
+            fprintf(stderr, "Bad type %d", ntohs(ack.type));
+        }
+        fflush(stdout);
+    }
+
+
+}
+
 
 int main(int argc, char *argv[])
 {
-    int sockfd, portno, n;
+    int  portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[256];
     header hd, msg;
     
+
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
        exit(0);
@@ -64,12 +94,13 @@ int main(int argc, char *argv[])
         header ack;
         char interpreter_msg[400];
         char temp[100];
-
-        read(sockfd, &ack, 6);
-        printf("Received ack with type %d\n", ntohs(ack.type)); 
     
+    
+    pthread_t read_from;
+    pthread_create(&read_from, NULL, read_acks, NULL);
+    
+
     while (sn >= 0) {
-      
         bzero(buffer, 256);
         printf(">: ");
         fgets(buffer, 255, stdin);
@@ -84,24 +115,8 @@ int main(int argc, char *argv[])
         if (sn < 0) {
             error("ERROR writing to socket");
         }
-
-       /* sn = read(sockfd, &ack, 6);
-        printf("ACKTYPE: %d\n", ntohs(ack.type));
-     
-        sn = read(sockfd, &ack, 6);
-        sn = read(sockfd, interpreter_msg, ntohl(ack.length));
-    
-        if (sn < 0) {
-            error("ERROR reading from socket");
-        } else {
-           printf("Type: %d >: %s \n", ntohs(ack.type), interpreter_msg);
-
-        }
-*/
-
-    }
+   }
     printf("Exiting\n");
     close(sockfd);
-
     return 0;
 }
