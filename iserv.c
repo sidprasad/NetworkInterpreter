@@ -283,12 +283,8 @@ void service_client(int index) {
 
     int temp, i;
     int rd = 0;
-    //char msg[400];
-    //char final[401];
-    char *msgShea;
-    char *finalShea;
-    //bzero((char *) &msg, 400);
-    //bzero((char *) &final, 401);
+    char *msg;
+    char *final;
 
     header hd;
     
@@ -305,24 +301,16 @@ void service_client(int index) {
     hd.type = ntohs(hd.type);   
     hd.len = ntohl(hd.len);
    
-   /* 
-    if(hd.len > 400) {
-        printf("Message length too long (for now)!\n");
-        c_error(index);
-        return;
-    }*/
-    msgShea = malloc(hd.len);
+    msg = malloc(hd.len);
 
     if(hd.len > 0) {
-        rd = readMsg(index, hd.len, &msgShea);
-        printf("THIS IS WHAT WAS READ:\n%s", msgShea);
-        //rd = read(connectlist[index], msg, 400);
+        rd = readMsg(index, hd.len, &msg);
         if(hd.len != rd) {
             printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
             c_error(index);
             return;
         }
-        printf("Received string: %s\n", msgShea); 
+        printf("Received string: %s\n", msg); 
     }
         // type 1 is to connect
         if(hd.type == 1) {
@@ -336,17 +324,15 @@ void service_client(int index) {
                     ack.type = htons(4);
                     ack.len = 0;
                     write(connectlist[index], &ack, 6);
-                    finalShea = malloc(rd + 1);
-                    strcpy(finalShea, (char *)strcat(msgShea, "\n"));                    
-                    printf("FINAL: %s\n", finalShea);
 
-                  //  strcpy(final, (char *)strcat(msg, "\n"));
-                    fwrite(finalShea, strlen(finalShea), 1, child_in);
-                    fwrite(finalShea, strlen(finalShea), 1, ilog);
+                    final = malloc(rd + 1);
+                    
+                    strcpy(final, (char *)strcat(msg, "\n"));                    
+                    fwrite(final, strlen(final), 1, child_in);
+                    fwrite(final, strlen(final), 1, ilog);
                     fflush(child_in);  
                     fflush(ilog);
                     write_to_all();
-
                 }
                 else {
                     /* ERROR */
