@@ -68,7 +68,7 @@ void sig_handler(int signum) {
     fclose(ilog);
     fclose(child_in);
     kill(int_pid, 9);   //Killing interpreter
-
+    remove("intermediate");
     fprintf(stderr, "Closing server\n");
     exit(0);
 }
@@ -87,6 +87,8 @@ void write_to_all() {
     pipe(fd);
     int temp_pid;
     if(temp_pid = fork()) {
+
+        //use out2 if you ever need to tail -2 again (ie non -q option)
         inter_in = fdopen(fd[0], "r");
         close(fd[1]);
         char *out = NULL;
@@ -94,7 +96,7 @@ void write_to_all() {
         size_t n = 400;
         size_t n2 = 400;
         getline(&out, &n, inter_in);
-        getline(&out2, &n2, inter_in);
+       // getline(&out2, &n2, inter_in);
         n = strlen(out);
         int i;
         header ack;
@@ -116,7 +118,7 @@ void write_to_all() {
         dup(fd[1]);
         close(fd[1]);
         close(fd[0]);
-        execl("/usr/bin/tail", "/usr/bin/tail", "-2", "intermediate", NULL);
+        execl("/usr/bin/tail", "/usr/bin/tail", "-1", "intermediate", NULL);
     }
 
 
@@ -301,7 +303,7 @@ int main(int argc, char *argv[])
         close(inter_fd);
         close(fd_[1]);
         close(fd_[0]);
-        execl(interpreter_address, interpreter_address, NULL);
+        execl(interpreter_address, interpreter_address, "-q",  NULL);
     }
 }
 
