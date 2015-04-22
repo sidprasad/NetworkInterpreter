@@ -82,33 +82,4 @@ int FILE_RECV(int sockfd, char* fname)
         fclose(fp);
         return 0;
 }
-
-// int FILE_SEND(int sockfd, char* fname) 
-// {
-//         FILE* fp = fopen(fname, "r");
-//         if (fp == NULL) return -1;
-//         size_t len, size;
-//         fseek(fp, 0, SEEK_END);
-//         size = ftell(fp);
-//         fseek(fp, 0, SEEK_SET);
-//         char buffer[size];
-//         len = fread(buffer, 1, size, fp); 
-//         if (len != size) return FILE_SEND(sockfd, fname);
-//         write(sockfd, &size, sizeof(size));
-//         write(sockfd, buffer, size);
-//         return 0;
-// }
-
-// int FILE_RECV(int sockfd, char* fname) 
-// {
-//         FILE* fp = fopen(fname, "w");
-//         if (fp == NULL) return -1;
-//         size_t len, size;
-//         read(sockfd, &size, sizeof(size));
-//         char buffer[size];
-//         len = read(sockfd, buffer, size); 
-//         if (len != size) return FILE_RECV(sockfd, fname);
-//         fwrite(buffer, 1, size, fp);
-//         return 0;
-// }
 #endif

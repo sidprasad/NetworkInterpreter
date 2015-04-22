@@ -99,11 +99,14 @@ int main(int argc, char *argv[])
     pthread_t read_from;
     pthread_create(&read_from, NULL, read_acks, NULL);
     
-
+    printf(">: ");
     while (sn >= 0) {
         bzero(buffer, 256);
-        printf(">: ");
+        
         fgets(buffer, 255, stdin);
+        if (strlen(buffer) > 0) {
+            printf(">: ");
+        }
 
         header ex;
         ex.type = htons(3);
