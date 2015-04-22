@@ -35,6 +35,7 @@ int int_pid;
 int hsize = 6;
 void service_client(int);
 int readMsg(int, int, char **); 
+int parenCheck(char*);
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -365,15 +366,20 @@ void service_client(int index) {
                     ack.type = htons(4);
                     ack.len = htonl(0);
                     write(connectlist[index], &ack, 6);
-                    final = malloc(rd + 1);
-                    
-                    strcpy(final, (char *)strcat(msg, "\n"));                    
-                    fwrite(final, strlen(final), 1, child_in);
-                    fwrite(final, strlen(final), 1, ilog);
-                    fflush(child_in);  
-                    fflush(ilog);
+                   
+                   if(parenCheck(msg)) { 
+                        printf("WORKING BITCH\n");
+                        final = malloc(rd + 1);
+                        strcpy(final, (char *)strcat(msg, "\n"));                    
+                        fwrite(final, strlen(final), 1, child_in);
+                        fwrite(final, strlen(final), 1, ilog);
+                        fflush(child_in);  
+                        fflush(ilog);
 
-                    write_to_all();
+                        write_to_all();
+                   } else {
+                       //send error from 'interpreter'
+                   }
                 }
                 else {
                     /* ERROR */
@@ -428,7 +434,10 @@ int readMsg(int sock, int totalBytes, char **str)
     return bytesRead;
 }
 
-
+int parenCheck(char *msg)
+{
+    return 1;
+}
 
 
 
