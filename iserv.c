@@ -96,7 +96,8 @@ void write_to_all() {
         size_t n = 400;
         size_t n2 = 400;
         getline(&out, &n, inter_in);
-       // getline(&out2, &n2, inter_in);
+        //getline(&out2, &n2, inter_in);
+        system("cat intermediate");
         n = strlen(out);
         int i;
         header ack;
@@ -221,7 +222,7 @@ int main(int argc, char *argv[])
         error("ERROR opening socket");
 
     intermediate = fopen("intermediate", "a+");
-    setvbuf(intermediate, NULL, _IOLBF, BUFSIZ);
+    setvbuf(intermediate, NULL, _IONBF, BUFSIZ);
     int inter_fd = fileno(intermediate); 
 
     if(int_pid = fork()) {
