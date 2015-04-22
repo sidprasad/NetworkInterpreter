@@ -64,10 +64,11 @@ int main(int argc, char *argv[])
         header ack;
         char interpreter_msg[400];
         char temp[100];
-
+        /*
         read(sockfd, &ack, 6);
         printf("Received ack with type %d\n", ntohs(ack.type)); 
-    
+        fflush(stdout); 
+        */
     while (sn >= 0) {
       
         bzero(buffer, 256);
@@ -98,8 +99,21 @@ int main(int argc, char *argv[])
 
         }
 */
+        
+        read(sockfd, &ack, 6);
+        printf("Received ack with type %d length %d\n", ntohs(ack.type), ntohl(ack.length)); 
+        fflush(stdout); 
 
-    }
+        read(sockfd, &ack, 6);
+        printf("Received ack with type %d length %d\n", ntohs(ack.type), ntohl(ack.length)); 
+
+        bzero(buffer, 256);
+        read(sockfd, &buffer, ntohl(ack.length));
+        printf("GOT: %s\n", buffer);
+        fflush(stdout); 
+
+
+   }
     printf("Exiting\n");
     close(sockfd);
 

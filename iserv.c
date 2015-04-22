@@ -26,9 +26,7 @@
 #include "./file_transfer/ftrans.c"
 
 FILE *child_in; //input into child
-
-//FILE* child_out;
-
+FILE* intermediate;
 FILE *ilog;
 
 char *interpreter_address = "interpreters/uscheme";
@@ -76,33 +74,54 @@ void sig_handler(int signum) {
 }
 
 
-
-
 void error(const char *msg)
 {
     perror(msg);
     exit(1);
 }
 
-
 void write_to_all() {
-    int i, read_len;
-    char out[400];
-    bzero((char *)&out, 400);
 
-    //This step is going to be the issue
-   // read_len = read(int_pid, out, 400);
-    //
-    header ack;
-    ack.type = htons(2);
-    ack.len = strlen("Placeholder");
-    for (i=0; i<clsize; i++) {
-        if (connectlist[i] != 0) {
-            write(connectlist[i], &ack, 6);
-            write(connectlist[i],"Placeholder" , read_len);
+    FILE *inter_in;
+    int fd[2];
+    pipe(fd);
+    int temp_pid;
+    if(temp_pid = fork()) {
+        inter_in = fdopen(fd[0], "r");
+        close(fd[1]);
+        char *out = NULL;
+        char *out2 = NULL;
+        size_t n = 400;
+        size_t n2 = 400;
+        getline(&out, &n, inter_in);
+        getline(&out2, &n2, inter_in);
+        n = strlen(out);
+        int i;
+        header ack;
+        ack.type = htons(2);
+        ack.len = htonl(n);
+    
+        for (i=0; i<clsize; i++) {
+            if (connectlist[i] != 0) {
+            
+                fprintf(stderr, "Writing: %s to fd:%d with length %d \n",
+                 out, connectlist[i], n);
+                write(connectlist[i], &ack, 6);
+                write(connectlist[i], out, n);
+            }
         }
+
+    } else {
+        close(1);
+        dup(fd[1]);
+        close(fd[1]);
+        close(fd[0]);
+        execl("/usr/bin/tail", "/usr/bin/tail", "-2", "intermediate", NULL);
     }
-    fprintf(stdout, "-> %s\n",out);
+
+
+
+
 }
 
 
@@ -199,6 +218,10 @@ int main(int argc, char *argv[])
     if (sockfd < 0) 
         error("ERROR opening socket");
 
+    intermediate = fopen("intermediate", "a+");
+    setvbuf(intermediate, NULL, _IOLBF, BUFSIZ);
+    int inter_fd = fileno(intermediate); 
+
     if(int_pid = fork()) {
 
 
@@ -269,8 +292,13 @@ int main(int argc, char *argv[])
         return 0; 
     } else {
 
+        close(2);
+        dup(inter_fd);
+        close(1);
+        dup(inter_fd);
         close(0);
         dup(fd_[0]);
+        close(inter_fd);
         close(fd_[1]);
         close(fd_[0]);
         execl(interpreter_address, interpreter_address, NULL);
@@ -314,17 +342,26 @@ void service_client(int index) {
     }
         // type 1 is to connect
         if(hd.type == 1) {
-                       
-            send_ack(index); 
+            printf("Connected! Should send ack?\n"); 
+           //send_ack(index);
+           //
+           //
+           //
+           //
+           // NEED TO TALK ABOUT THIS
+           //
+           //
+           //
+           //
+           //
         //Type 3 is interpreter command
         } else if (hd.type == 3 && (hd.len > 0)) {
                 if(connectlist[index]) {                                  
                                 
                     header ack; 
                     ack.type = htons(4);
-                    ack.len = 0;
+                    ack.len = htonl(0);
                     write(connectlist[index], &ack, 6);
-
                     final = malloc(rd + 1);
                     
                     strcpy(final, (char *)strcat(msg, "\n"));                    
@@ -332,6 +369,7 @@ void service_client(int index) {
                     fwrite(final, strlen(final), 1, ilog);
                     fflush(child_in);  
                     fflush(ilog);
+
                     write_to_all();
                 }
                 else {
@@ -339,6 +377,10 @@ void service_client(int index) {
                     c_error(index);
                 }
         //Else problem!
+        } else if (hd.type == 3) {
+
+            printf("Disregarding empty message\n");
+
         } else if (hd.type == 5) {
             fprintf(stderr, "Graceful exit with user %d\n", index);
             //Send copy of uScheme interpreter and then log
