@@ -36,6 +36,7 @@ char *interpreter_address = "interpreters/uscheme";
 int int_pid;
 int hsize = 6;
 void service_client(int);
+int readMsg(int, int, char **); 
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -182,7 +183,6 @@ void read_socks() {
 
 int main(int argc, char *argv[])
 {
-
     int fd_[2];
     pipe(fd_);
     int newsockfd, portno, i;
@@ -229,6 +229,9 @@ int main(int argc, char *argv[])
 
         /* We keep track of the highest socket fd*/
         hisockfd = sockfd;
+
+        /*Shea: why do we bzero connectionlist and then manually zero it? */
+
         bzero((char*)connectlist, sizeof(connectlist));
 
         for (i = 0; i < 200; i++) {
@@ -280,13 +283,11 @@ void service_client(int index) {
 
     int temp, i;
     int rd = 0;
-    char msg[400];
-    char final[401];
-    bzero((char *) &msg, 400);
-    bzero((char *) &final, 401);
+    char *msg;
+    char *final;
 
     header hd;
-
+    
     int read_s = read(connectlist[index], &hd, hsize);
    
     /* If an entire header is not read, we drop the connection */
@@ -299,15 +300,11 @@ void service_client(int index) {
 
     hd.type = ntohs(hd.type);   
     hd.len = ntohl(hd.len);
-    
-    if(hd.len > 400) {
-        printf("Message length too long (for now)!\n");
-        c_error(index);
-        return;
-    }
- 
+   
+    msg = malloc(hd.len);
+
     if(hd.len > 0) {
-        rd = read(connectlist[index], msg, 400);
+        rd = readMsg(index, hd.len, &msg);
         if(hd.len != rd) {
             printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
             c_error(index);
@@ -327,15 +324,15 @@ void service_client(int index) {
                     ack.type = htons(4);
                     ack.len = 0;
                     write(connectlist[index], &ack, 6);
+
+                    final = malloc(rd + 1);
                     
-                                        
-                    strcpy(final, (char *)strcat(msg, "\n"));
+                    strcpy(final, (char *)strcat(msg, "\n"));                    
                     fwrite(final, strlen(final), 1, child_in);
                     fwrite(final, strlen(final), 1, ilog);
                     fflush(child_in);  
                     fflush(ilog);
                     write_to_all();
-
                 }
                 else {
                     /* ERROR */
@@ -365,5 +362,32 @@ void service_client(int index) {
         }
     }
 }
+
+int readMsg(int sock, int totalBytes, char **str)
+{
+    int bytesRead = 0;
+    int rd;
+    char *msg = *str;
+    /* This whileLoop ensures that all bytes are being read, even when read 
+     * does not get everything -- is this needed?*/
+    while (bytesRead < totalBytes) {
+        rd = read(connectlist[sock], msg + bytesRead, totalBytes - bytesRead);
+        if (rd < 1) {
+            fprintf(stderr, "Error Reading Data\n");
+            exit(1);
+        }
+        bytesRead += rd;
+    }
+    
+
+    return bytesRead;
+}
+
+
+
+
+
+
+
 
 

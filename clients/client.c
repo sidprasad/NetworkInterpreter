@@ -133,10 +133,9 @@ int main(int argc, char *argv[])
             } else {
                 ex.type = htons(3);
                 ex.length = htonl(strlen(buffer));
-
                 sn = write(sockfd, &ex, 6);
                 if (sn < 0) error("ERROR writing to socket");
-                
+                 
                 sn = write(sockfd, buffer, strlen(buffer));
                 if (sn < 0) error("ERROR writing to socket");
             }
