@@ -354,7 +354,7 @@ void service_client(int index) {
         //Else problem!
         } else if (hd.type == 3) {
             printf("Disregarding empty message\n");
-        } else if (hd.type == 5) {
+        } else if (hd.type == 5 && connectlist[index]) {
             fprintf(stderr, "Graceful exit with user %d\n", index);
             //Send copy of uScheme interpreter and then log
             header ack;
