@@ -11,21 +11,16 @@ several clients across a network. All clients share an environment, and need to
 
 ## Tasks
 
-- Nikhil: Request types 5,6,7. Select call for iclient.c
+- Nikhil: Graceful disconnect file transfer
 
-- Shea: Buffering on server i/o (TCP calls fragment)
+- Shea: 
 
-- Siddhartha: There may be a new ack type required.
+- Siddhartha: 
 
 ## Current Issues
 
-- Currently using a simple ACKless client for testing purposes. Eventual
-client will look like client.c
-
 - Currently using intermediate files for interprocess communication
-
-- Need to check incoming strings for newline termination, if it does not exist
-add a '\n'.
+- Need to implement bad disconnect
 
 ## Current Protocol
 
@@ -41,6 +36,8 @@ Message Type   | From  | To   | Meaning|
 5              |Client |Server|Graceful exit|
 6              |Server |Client| Interpreter file|
 7              |Server |Client| logfile|
+8              |Server |Client| Accepted connection|
+
 
 A graceful exit provides the user with a copy of the interpreter as
 well as a log with all the commands provided to the interpreter.
@@ -49,18 +46,19 @@ same current environment.
 
 ## Future Plans
 
-- Better client design
 - Possibly distributed system
 - Local environment
-- Possibility of being able to gracefully disconnect with an interpreter
-that can work offline.
 
 ## Usage
 
 Client
 
-    gcc -g client.c -o client -lnsl
-    ./client <hostname> <portnumber>
+    sh ccompile
+    
+    or
+
+    gcc -g acklessclient.c -o ack -lnsl -pthread
+    ./ack <hostname> <portnumber>
 
 Server
 
