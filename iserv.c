@@ -33,38 +33,34 @@ char *interpreter_address = "interpreters/uscheme";
 
 int int_pid;
 int hsize = 6;
-void service_client(int);
-int readMsg(int, int, char **); 
-int parenCheck(char*, int);
-
-struct __attribute__((__packed__)) header {
-    unsigned short type;
-    unsigned int len;
-};
-
-typedef struct __attribute__((__packed__)) header header;
-
-void c_error(int i);
 
 int sockfd, hisockfd;
 int connectlist[200*sizeof(int)];
 
-
 int clsize = 200;
 fd_set socks;
 
-void send_ack(int i) {
+typedef struct __attribute__((__packed__)) header {
+    unsigned short type;
+    unsigned int len;
+} header;
 
+void c_error(int i);
+void service_client(int);
+int readMsg(int, int, char **); 
+int parenCheck(char*, int);
+
+void send_ack(int i) 
+{
     header ack;
     ack.type = htons(8);
     ack.len = 0;
    
-    write(connectlist[i], &ack, 6);
-
+    write(connectlist[i], &ack, hsize);
 }
 
-void sig_handler(int signum) {
-
+void sig_handler(int signum) 
+{
     (void) signum;
     fclose(ilog);
     fclose(child_in);
@@ -81,36 +77,38 @@ void error(const char *msg)
     exit(1);
 }
 
-void write_to_all() {
-
+void write_to_all() 
+{
     FILE *inter_in;
     int fd[2];
-    pipe(fd);
     int temp_pid;
-    if(temp_pid = fork()) {
 
-        //use out2 if you ever need to tail -2 again (ie non -q option)
-        inter_in = fdopen(fd[0], "r");
-        close(fd[1]);
+    pipe(fd);
+    
+    if(temp_pid = fork()) {
         char *out = NULL;
         char *out2 = NULL;
         size_t n = 400;
         size_t n2 = 400;
+        int i;
+
+        //use out2 if you ever need to tail -2 again (ie non -q option)
+        inter_in = fdopen(fd[0], "r");
+        close(fd[1]);
         getline(&out, &n, inter_in);
         //getline(&out2, &n2, inter_in);
         system("cat intermediate");
         n = strlen(out);
-        int i;
+        
         header ack;
         ack.type = htons(2);
         ack.len = htonl(n);
     
-        for (i=0; i<clsize; i++) {
+        for (i = 0; i < clsize; i++) {
             if (connectlist[i] != 0) {
-            
                 fprintf(stderr, "Writing: %s to fd:%d with length %d \n",
-                 out, connectlist[i], n);
-                write(connectlist[i], &ack, 6);
+                            out, connectlist[i], n);
+                write(connectlist[i], &ack, hsize);
                 write(connectlist[i], out, n);
             }
         }
@@ -122,26 +120,22 @@ void write_to_all() {
         close(fd[0]);
         execl("/usr/bin/tail", "/usr/bin/tail", "-1", "intermediate", NULL);
     }
-
-
-
-
 }
 
 
-void c_error(int i) {
-
+void c_error(int i) 
+{
     fprintf(stderr, "ERROR Closing\n");
- 
 }
 
 /* Builds the sel_list, also gets highest socket number */
-void build_sel_list () {
+void build_sel_list () 
+{
     int i;
     char buff[2];
 
-    for(i = 0; i < clsize; i++) {
-        if(connectlist[i] != 0 && read(connectlist[i], buff, 0) < 0) {
+    for (i = 0; i < clsize; i++) {
+        if (connectlist[i] != 0 && read(connectlist[i], buff, 0) < 0) {
             close(connectlist[i]);
             connectlist[i] = 0;
         }
@@ -154,14 +148,13 @@ void build_sel_list () {
      * if a connection comes in on that socket */   
     FD_SET(sockfd, &socks);
     /* Adds all possible connections to the fd_set socks */
-    for(i = 0; i < clsize; i++) {
-        if(connectlist[i] > 0) {
+    for (i = 0; i < clsize; i++) {
+        if (connectlist[i] > 0) {
             FD_SET(connectlist[i], &socks);
             if (connectlist[i] > hisockfd)
                 hisockfd = connectlist[i];
         }
     }
-
 }
 
 void new_connection () {
@@ -175,30 +168,31 @@ void new_connection () {
         error("accept error");
     }
     
-    for(i = 0; (i < clsize) && (confd != -1); i++) {
-        if((connectlist[i] == 0)) {
+    for (i = 0; (i < clsize) && (confd != -1); i++) {
+        if (connectlist[i] == 0) {
             printf("\n Connection accepted at FD=%d; List slot=%d\n", confd, i);
             connectlist[i] = confd;
             confd = -1;
         }
     }
     
-    if(confd != -1) {
+    if (confd != -1) {
         printf("No space!");
         close(confd);
     }
-
 }
 
 void read_socks() {
     int i;
+    
     /* If a listening socket is part of the fd_set, we accept a new connection*/
     if (FD_ISSET(sockfd, &socks))
         new_connection();
+    
     /* Now go through the sockets in the list, if anything happened,
      * deal with them */
-    for(i = 0; i < clsize; i++) {
-        if(FD_ISSET(connectlist[i], &socks)) {
+    for (i = 0; i < clsize; i++) {
+        if (FD_ISSET(connectlist[i], &socks)) {
             service_client(i);
         }
     }
@@ -207,11 +201,13 @@ void read_socks() {
 int main(int argc, char *argv[])
 {
     int fd_[2];
-    pipe(fd_);
     int newsockfd, portno, i;
     int num_socks, numsocks; /* Holds the number of sockets ready for reading */
     struct sockaddr_in serv_addr, cli_addr;
     struct timeval timeout; /* timeout for select */    
+    
+    pipe(fd_);
+    
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
         exit(1);
@@ -226,16 +222,13 @@ int main(int argc, char *argv[])
     setvbuf(intermediate, NULL, _IONBF, BUFSIZ);
     int inter_fd = fileno(intermediate); 
 
-    if(int_pid = fork()) {
-
-
+    if (int_pid = fork()) {
+        
         /*** Set up a signal handler for Ctr-C ***/
         struct sigaction act;
         act.sa_handler = &sig_handler;
         sigaction(SIGINT, &act, NULL);
         /****************************************/
-
-
 
         child_in = fdopen(fd_[1], "w");
         /* Set socket so that it is non-blocking */ 
@@ -246,35 +239,22 @@ int main(int argc, char *argv[])
         serv_addr.sin_addr.s_addr = INADDR_ANY;
         serv_addr.sin_port = htons(portno);
 
-
         if (bind(sockfd, (struct sockaddr *) &serv_addr,
-            sizeof(serv_addr)) < 0) 
+                    sizeof(serv_addr)) < 0) {
             error("ERROR on binding");
-
+        }
         listen(sockfd,5);
-
 
         /* We keep track of the highest socket fd*/
         hisockfd = sockfd;
 
-        /*Shea: why do we bzero connectionlist and then manually zero it? */
-
         bzero((char*)connectlist, sizeof(connectlist));
-
-        for (i = 0; i < 200; i++) {
-            connectlist[i] = 0;
-        }
 
         /* We set up a log of all commands sent as a file */
 
         ilog = fopen("logfile.scm", "w");
 
-
         /****************************************************/
-
-
-
-
         /* Now loop forever */ 
         while(1) {
 
@@ -282,9 +262,8 @@ int main(int argc, char *argv[])
 
             num_socks = select(hisockfd+1, &socks, (fd_set *)0, (fd_set *) 0, NULL);
 
-            if( num_socks < 0) {
+            if (num_socks < 0) {
                 error("Selectd failed\n");
-
             } else if (num_socks == 0) {
                 printf("Nothing selected\n");
             } else {
@@ -309,8 +288,6 @@ int main(int argc, char *argv[])
     }
 }
 
-
-
 void service_client(int index) {
 
     int temp, i;
@@ -323,80 +300,63 @@ void service_client(int index) {
     int read_s = read(connectlist[index], &hd, hsize);
    
     /* If an entire header is not read, we drop the connection */
-     if(read_s < hsize) {
+    if(read_s < hsize) {
         printf("Connection lost with FD=%d, Slot=%d\n", connectlist[index], index);
         close(connectlist[index]);
-
         connectlist[index] = 0;
     } else {
-
-    hd.type = ntohs(hd.type);   
-    hd.len = ntohl(hd.len);
+        hd.type = ntohs(hd.type);   
+        hd.len = ntohl(hd.len);
    
-    msg = malloc(hd.len);
+        msg = malloc(hd.len);
 
-    if(hd.len > 0) {
-        rd = readMsg(index, hd.len, &msg);
-        if(hd.len != rd) {
-            printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
-            c_error(index);
-            return;
-        }
-        printf("Received string: %s\n", msg); 
-    }
+        if(hd.len > 0) {
+            rd = readMsg(index, hd.len, &msg);
+            if(hd.len != rd) {
+                printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
+                c_error(index);
+                return;
+            }   
+        }   
         // type 1 is to connect
         if(hd.type == 1) {
-            printf("Connected! Should send ack?\n"); 
+            printf("Connected! Ack sent\n"); 
             send_ack(index);
-           //
-           //
-           //
-           //
-           // SHEA WILL ADD
-           //
-           //
-           //
-           //
-           //
         //Type 3 is interpreter command
         } else if (hd.type == 3 && (hd.len > 0)) {
-                if(connectlist[index]) {                                  
-                    header ack; 
-                    ack.type = htons(4);
-                    ack.len = htonl(0);
-                    write(connectlist[index], &ack, 6);
+            if (connectlist[index]) {                                  
+                header ack; 
+                ack.type = htons(4);
+                ack.len = htonl(0);
+                write(connectlist[index], &ack, 6);
                     
-                    if(parenCheck(msg, rd)) { 
-                        final = malloc(rd + 1);
-                        strcpy(final, (char *)strcat(msg, "\n"));                    
-                        fwrite(final, strlen(final), 1, child_in);
-                        fwrite(final, strlen(final), 1, ilog);
-                        fflush(child_in);  
-                        fflush(ilog);
-                        write_to_all();
-                   } else {
-                        header errorAck;
-                        char *err = "Mismatched parentheses\n";
-                        errorAck.type = htons(2);
-                        errorAck.len = htonl(24);
+                if (parenCheck(msg, rd)) { 
+                    final = malloc(rd + 1);
+                    strcpy(final, (char *)strcat(msg, "\n"));                    
+                    fwrite(final, strlen(final), 1, child_in);
+                    fwrite(final, strlen(final), 1, ilog);
+                    fflush(child_in);  
+                    fflush(ilog);
+                    write_to_all();
+                } else {
+                    header errorAck;
+                    char *err = "Mismatched parentheses\n";
+                    errorAck.type = htons(2);
+                    errorAck.len = htonl(24);
 
-                        write(connectlist[index], &errorAck, 6);
-                        write(connectlist[index], err, 24);         
-                   }
+                    write(connectlist[index], &errorAck, 6);
+                    write(connectlist[index], err, 24);         
                 }
-                else {
-                    /* ERROR */
-                    c_error(index);
-                }
+            } else {
+                /* ERROR */
+                c_error(index);
+            }
         //Else problem!
         } else if (hd.type == 3) {
-
             printf("Disregarding empty message\n");
-
         } else if (hd.type == 5) {
             fprintf(stderr, "Graceful exit with user %d\n", index);
             //Send copy of uScheme interpreter and then log
-            //
             header ack;
             ack.type = htons(6);
             ack.len = 0;
@@ -432,8 +392,6 @@ int readMsg(int sock, int totalBytes, char **str)
         }
         bytesRead += rd;
     }
-    
-
     return bytesRead;
 }
 
