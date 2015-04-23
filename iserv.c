@@ -35,6 +35,7 @@ int int_pid;
 int hsize = 6;
 void service_client(int);
 int readMsg(int, int, char **); 
+int parenCheck(char*, int);
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -55,7 +56,7 @@ fd_set socks;
 void send_ack(int i) {
 
     header ack;
-    ack.type = htons(2);
+    ack.type = htons(8);
     ack.len = 0;
    
     write(connectlist[i], &ack, 6);
@@ -346,12 +347,12 @@ void service_client(int index) {
         // type 1 is to connect
         if(hd.type == 1) {
             printf("Connected! Should send ack?\n"); 
-           //send_ack(index);
+            send_ack(index);
            //
            //
            //
            //
-           // NEED TO TALK ABOUT THIS
+           // SHEA WILL ADD
            //
            //
            //
@@ -360,20 +361,28 @@ void service_client(int index) {
         //Type 3 is interpreter command
         } else if (hd.type == 3 && (hd.len > 0)) {
                 if(connectlist[index]) {                                  
-                                
                     header ack; 
                     ack.type = htons(4);
                     ack.len = htonl(0);
                     write(connectlist[index], &ack, 6);
-                    final = malloc(rd + 1);
                     
-                    strcpy(final, (char *)strcat(msg, "\n"));                    
-                    fwrite(final, strlen(final), 1, child_in);
-                    fwrite(final, strlen(final), 1, ilog);
-                    fflush(child_in);  
-                    fflush(ilog);
+                    if(parenCheck(msg, rd)) { 
+                        final = malloc(rd + 1);
+                        strcpy(final, (char *)strcat(msg, "\n"));                    
+                        fwrite(final, strlen(final), 1, child_in);
+                        fwrite(final, strlen(final), 1, ilog);
+                        fflush(child_in);  
+                        fflush(ilog);
+                        write_to_all();
+                   } else {
+                        header errorAck;
+                        char *err = "Mismatched parentheses\n";
+                        errorAck.type = htons(2);
+                        errorAck.len = htonl(24);
 
-                    write_to_all();
+                        write(connectlist[index], &errorAck, 6);
+                        write(connectlist[index], err, 24);         
+                   }
                 }
                 else {
                     /* ERROR */
@@ -428,6 +437,26 @@ int readMsg(int sock, int totalBytes, char **str)
     return bytesRead;
 }
 
+int parenCheck(char *msg, int n)
+{
+    int i, count = 0;
+    char c;
+    if (msg == NULL) return 0;
+    
+    for (i = 0; i < n; i++){
+        c = msg[i];
+        if (c == '(') {
+            count++;
+        } else if (c == ')') {
+            count--;
+            if (count < 0) 
+                return 0;
+        }
+    }
+    if (count > 0)
+        return 0;
+    return 1;
+}
 
 
 
