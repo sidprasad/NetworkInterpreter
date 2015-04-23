@@ -56,7 +56,7 @@ fd_set socks;
 void send_ack(int i) {
 
     header ack;
-    ack.type = htons(2);
+    ack.type = htons(8);
     ack.len = 0;
    
     write(connectlist[i], &ack, 6);
@@ -361,12 +361,12 @@ void service_client(int index) {
         //Type 3 is interpreter command
         } else if (hd.type == 3 && (hd.len > 0)) {
                 if(connectlist[index]) {                                  
-                   if(parenCheck(msg, rd)) { 
-                        header ack; 
-                        ack.type = htons(4);
-                        ack.len = htonl(0);
-                        write(connectlist[index], &ack, 6);
-                        
+                    header ack; 
+                    ack.type = htons(4);
+                    ack.len = htonl(0);
+                    write(connectlist[index], &ack, 6);
+                    
+                    if(parenCheck(msg, rd)) { 
                         final = malloc(rd + 1);
                         strcpy(final, (char *)strcat(msg, "\n"));                    
                         fwrite(final, strlen(final), 1, child_in);
