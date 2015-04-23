@@ -361,13 +361,12 @@ void service_client(int index) {
         //Type 3 is interpreter command
         } else if (hd.type == 3 && (hd.len > 0)) {
                 if(connectlist[index]) {                                  
-                                
-                    header ack; 
-                    ack.type = htons(4);
-                    ack.len = htonl(0);
-                    write(connectlist[index], &ack, 6);
-                   
                    if(parenCheck(msg, rd)) { 
+                        header ack; 
+                        ack.type = htons(4);
+                        ack.len = htonl(0);
+                        write(connectlist[index], &ack, 6);
+                        
                         final = malloc(rd + 1);
                         strcpy(final, (char *)strcat(msg, "\n"));                    
                         fwrite(final, strlen(final), 1, child_in);
@@ -376,8 +375,13 @@ void service_client(int index) {
                         fflush(ilog);
                         write_to_all();
                    } else {
+                        header errorAck;
+                        char *err = "Mismatched parentheses\n";
+                        errorAck.type = htons(2);
+                        errorAck.len = htonl(24);
 
-                       //send error from 'interpreter'
+                        write(connectlist[index], &errorAck, 6);
+                        write(connectlist[index], err, 24);         
                    }
                 }
                 else {
