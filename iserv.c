@@ -35,7 +35,7 @@ int int_pid;
 int hsize = 6;
 void service_client(int);
 int readMsg(int, int, char **); 
-int parenCheck(char*);
+int parenCheck(char*, int);
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -347,12 +347,12 @@ void service_client(int index) {
         // type 1 is to connect
         if(hd.type == 1) {
             printf("Connected! Should send ack?\n"); 
-           //send_ack(index);
+            send_ack(index);
            //
            //
            //
            //
-           // NEED TO TALK ABOUT THIS
+           // SHEA WILL ADD
            //
            //
            //
@@ -367,17 +367,16 @@ void service_client(int index) {
                     ack.len = htonl(0);
                     write(connectlist[index], &ack, 6);
                    
-                   if(parenCheck(msg)) { 
-                        printf("WORKING BITCH\n");
+                   if(parenCheck(msg, rd)) { 
                         final = malloc(rd + 1);
                         strcpy(final, (char *)strcat(msg, "\n"));                    
                         fwrite(final, strlen(final), 1, child_in);
                         fwrite(final, strlen(final), 1, ilog);
                         fflush(child_in);  
                         fflush(ilog);
-
                         write_to_all();
                    } else {
+
                        //send error from 'interpreter'
                    }
                 }
@@ -434,10 +433,27 @@ int readMsg(int sock, int totalBytes, char **str)
     return bytesRead;
 }
 
-int parenCheck(char *msg)
+int parenCheck(char *msg, int n)
 {
+    int i, count = 0;
+    char c;
+    if (msg == NULL) return 0;
+    
+    for (i = 0; i < n; i++){
+        c = msg[i];
+        if (c == '(') {
+            count++;
+        } else if (c == ')') {
+            count--;
+            if (count < 0) 
+                return 0;
+        }
+    }
+    if (count > 0)
+        return 0;
     return 1;
 }
+
 
 
 
