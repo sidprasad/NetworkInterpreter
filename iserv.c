@@ -2,9 +2,9 @@
  * 
  * Siddhartha Prasad
  * Nikhil Shinday
- * Shea Clark-Tiesche
+ * Shea Clark-Tieche
  *
- * This assignment implements a simple distributed interpreter
+ * This assignment implements a network interpreter
  * 
  *  Compile With: gcc -g iserv.c -lnsl
  *
@@ -92,11 +92,9 @@ void write_to_all()
         size_t n2 = 400;
         int i;
 
-        //use out2 if you ever need to tail -2 again (ie non -q option)
         inter_in = fdopen(fd[0], "r");
         close(fd[1]);
         getline(&out, &n, inter_in);
-        //getline(&out2, &n2, inter_in);
         system("cat intermediate");
         n = strlen(out);
         
@@ -158,10 +156,9 @@ void build_sel_list ()
 }
 
 void new_connection () {
-    //confd holds the fd for the new connection
+    /* confd holds the fd for the new connection */
     int i, confd;
 
-    //Might want client address and client length here
     confd = accept(sockfd, NULL, NULL);
 
     if (confd < 0) {
@@ -177,7 +174,7 @@ void new_connection () {
     }
     
     if (confd != -1) {
-        printf("No space!");
+        fprintf(stderr, "No space!\n");
         close(confd);
     }
 }
@@ -263,7 +260,7 @@ int main(int argc, char *argv[])
             if (num_socks < 0) {
                 error("Selectd failed\n");
             } else if (num_socks == 0) {
-                printf("Nothing selected\n");
+                fprintf(stderr, "Nothing selected\n");
             } else {
                 read_socks();
             }  
@@ -311,23 +308,22 @@ void service_client(int index) {
         if(hd.len > 0) {
             rd = readMsg(index, hd.len, &msg);
             if(hd.len != rd) {
-                printf("Error! Bad length Read %d Reported %d\n", rd, hd.len);
+                fprintf(stderr, "Error! Bad length Read %d Reported %d\n", rd, hd.len);
                 c_error(index);
                 return;
             }   
         }   
-        // type 1 is to connect
+        /* Type 1: Connection Request */
         if(hd.type == 1) {
-            printf("Connected! Ack sent\n"); 
             send_ack(index);
-        //Type 3 is interpreter command
+        /* Type 3: Interpreter Command */
         } else if (hd.type == 3 && (hd.len > 0)) {
             if (connectlist[index]) {                                  
                 header ack; 
                 ack.type = htons(4);
                 ack.len = htonl(0);
                 write(connectlist[index], &ack, hsize);
-                    
+                
                 if (parenCheck(msg, rd)) { 
                     final = malloc(rd + 1);
                     strcpy(final, (char *)strcat(msg, "\n"));                    
@@ -346,15 +342,14 @@ void service_client(int index) {
                     write(connectlist[index], err, 24);         
                 }
             } else {
-                /* ERROR */
                 c_error(index);
             }
-        //Else problem!
+
         } else if (hd.type == 3) {
             printf("Disregarding empty message\n");
         } else if (hd.type == 5 && connectlist[index]) {
             fprintf(stderr, "Graceful exit with user %d\n", index);
-            //Send copy of uScheme interpreter and then log
+            /* Send copy of uScheme interpreter so user can continue offline */
             header ack;
             ack.type = htons(hsize);
             ack.len = 0;
@@ -362,14 +357,12 @@ void service_client(int index) {
             if (FILE_SEND(connectlist[index], interpreter_address) == 0) {
                 ack.type = htons(7);
                 write(connectlist[index], &ack, hsize);
-               // fclose(ilog); 
+
                 if (FILE_SEND(connectlist[index], "logfile.scm") == 0) {}
                 else  printf("transferring log file failed\n");
             } else printf("transferring intepreter file failed\n"); 
             close(connectlist[index]);
             connectlist[index] = 0;
-            //ilog = fopen("logfile.scm", "w");
-            //fseek(ilog, 0, SEEK_END); 
         } else {
             fprintf(stderr, "Unrecognized type %hu\n", hd.type);
             c_error(index);
@@ -382,8 +375,7 @@ int readMsg(int sock, int totalBytes, char **str)
     int bytesRead = 0;
     int rd;
     char *msg = *str;
-    /* This whileLoop ensures that all bytes are being read, even when read 
-     * does not get everything -- is this needed?*/
+
     while (bytesRead < totalBytes) {
         rd = read(connectlist[sock], msg + bytesRead, totalBytes - bytesRead);
         if (rd < 1) {
