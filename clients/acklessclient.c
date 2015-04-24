@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
-
+#include "../file_transfer/ftrans.c"
 struct __attribute__((__packed__)) header {
     unsigned short type;
     unsigned int length;
@@ -43,8 +43,6 @@ void read_acks() {
         }
         fflush(stdout);
     }
-
-
 }
 
 
@@ -85,15 +83,23 @@ int main(int argc, char *argv[])
         error("ERROR connecting");
     }
 
-        //Sending connect message
-        hd.type = htons(1);
-        hd.length = htonl(0);
-        n = write(sockfd, &hd, 6);
-        int sn = 0;
+    //Sending connect message
+    hd.type = htons(1);
+    hd.length = htonl(0);
+    n = write(sockfd, &hd, 6);
+    int sn = 0;
 
-        header ack;
-        char interpreter_msg[400];
-        char temp[100];
+    header ack;
+    char interpreter_msg[400];
+    char temp[100]; 
+
+    if (read(sockfd, &ack, 6) == 6) { 
+        if (ack.type != 8) { 
+            printf("client connect unsuccessful\n"); 
+            exit(1); 
+        } 
+        else printf("client connect successful\n");
+    } 
     
     
     pthread_t read_from;
@@ -107,17 +113,59 @@ int main(int argc, char *argv[])
         if (strlen(buffer) > 0) {
             printf(">: ");
         }
-
         header ex;
-        ex.type = htons(3);
-        ex.length = htonl(strlen(buffer));
+        if (strcmp(buffer, "(exit)\n") == 0) {
 
-        sn = write(sockfd, &ex, 6);
-        write(sockfd, buffer, strlen(buffer));
+            ex.type = htons(5);
+            ex.length = htonl(0);
+            
+            sn = write(sockfd, &ex, 6);
+            if (sn < 0) {
+                error("ERROR writing to socket");
+            }
 
-        if (sn < 0) {
-            error("ERROR writing to socket");
+            sn = read(sockfd, &ex, 6);
+            if (sn < 0) {
+                error("ERROR writing to socket");
+            } else if (sn != 7) { 
+                close(sockfd);
+                error("ERROR incorrect ack");
+            }
+
+            system ("rm uscheme1; touch uscheme1; chmod +x uscheme1");
+            sn = FILE_RECV(sockfd, "uscheme1");
+            if (sn == -1) {
+                fprintf(stderr, "file didn't write correctly\n");
+                exit(1);
+            } else if (sn == -2) {
+                fprintf(stderr, "socket closed during transfer of logfile\n");
+                exit(1);
+            }
+
+            sn = FILE_RECV(sockfd, "logfile");
+            if (sn == -1) {
+                fprintf(stderr, "file didn't write correctly\n");
+                exit(1);
+            } else if (sn == -2) {
+                fprintf(stderr, "socket closed during transfer of logfile\n");
+                exit(1);
+            }
+
+            system("./uscheme1 < logfile");
+
+        } else {
+            ex.type = htons(3); 
+            ex.length = htonl(strlen(buffer));
+
+            sn = write(sockfd, &ex, 6);
+            write(sockfd, buffer, strlen(buffer));
+
+            if (sn < 0) {
+                error("ERROR writing to socket");
+            }    
         }
+        
+        
    }
     printf("Exiting\n");
     close(sockfd);
