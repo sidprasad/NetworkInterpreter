@@ -73,9 +73,7 @@ void read_acks() {
         fflush(stdout);
     }
 
-    received = 1; 
-    //Do stuff here
-
+    fprintf(stderr, "Received all files!\n");
     //system("./uscheme1");
 }
 
@@ -178,10 +176,11 @@ int main(int argc, char *argv[])
     close(sockfd);
     printf("Closed connection\n");
     fflush(stdout);
-    while(!received) {
-            printf("!");
-            fflush(stdout);
-    }
+    void * dontcare;
+
+    pthread_join(read_from, &dontcare);
+
+    fprintf(stderr, "Now starting interpreter\n"); 
 
     FILE * in;
     int fd[2];
@@ -192,7 +191,7 @@ int main(int argc, char *argv[])
     if(temp_pid = fork()) {
         char *input = NULL;
         size_t n = 256;
-        
+        in = fdopen(fd[1], "w");
         // Read things and write them to in
         fprintf(in, "(use logfile.scm)");
       while(1) {
