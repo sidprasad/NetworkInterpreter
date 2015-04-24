@@ -361,7 +361,7 @@ void service_client(int index) {
             ack.type = htons(hsize);
             ack.len = 0;
             write(connectlist[index], &ack, hsize);
-            if (FILE_SEND(connectlist[index], "/intepreters/uscheme") == 0) {
+            if (FILE_SEND(connectlist[index], interpreter_address) == 0) {
                 ack.type = htons(7);
                 write(connectlist[index], &ack, hsize);
                 fclose(ilog); 

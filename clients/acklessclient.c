@@ -40,7 +40,6 @@ void read_acks() {
         }else if(ntohs(ack.type) == 4) {
             //Create local log here!! Alternately, use locks and then
             //you can send an "accept dropped message"
-            fprintf(stderr, "Accept confirmed\n");
         } else if (ntohs(ack.type) == 6) {
             
             to_transfer = 1;
@@ -56,7 +55,7 @@ void read_acks() {
 
         } else if (ntohs(ack.type) == 7) {
             
-            sn = FILE_RECV(sockfd, "logfile");
+            sn = FILE_RECV(sockfd, "logfile.scm");
             if (sn == -1) {
                 fprintf(stderr, "file didn't write correctly\n");
                 exit(1);
@@ -66,7 +65,6 @@ void read_acks() {
             }
                 to_transfer = 1;
             //To change this
-            //system("./uscheme1 < logfile");
                 break;
         } else {
             fprintf(stderr, "Bad type %d", ntohs(ack.type));
@@ -75,6 +73,8 @@ void read_acks() {
     }
 
     //Do stuff here
+
+    system("./uscheme1");
 }
 
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
     printf(">: ");
     while (!to_transfer) {
         bzero(buffer, 256);
-        
+         
         fgets(buffer, 255, stdin);
         if (strlen(buffer) > 0) {
             printf(">: ");
@@ -158,17 +158,6 @@ int main(int argc, char *argv[])
                 error("ERROR writing to socket");
             }
 
-            /*
-            sn = read(sockfd, &ex, 6);
-            if (sn < 0) {
-                error("ERROR writing to socket");
-            } else if (sn != 7) { 
-                close(sockfd);
-                error("ERROR incorrect ack");
-            }
-
-            
-                        */
         } else {
             ex.type = htons(3); 
             ex.length = htonl(strlen(buffer));
