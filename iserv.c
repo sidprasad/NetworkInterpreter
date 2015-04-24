@@ -364,12 +364,14 @@ void service_client(int index) {
             if (FILE_SEND(connectlist[index], "/intepreters/uscheme") == 0) {
                 ack.type = htons(7);
                 write(connectlist[index], &ack, hsize);
+                fclose(ilog); 
                 if (FILE_SEND(connectlist[index], "logfile.scm") == 0) {}
                 else  printf("transferring log file failed\n");
             } else printf("transferring intepreter file failed\n"); 
             close(connectlist[index]);
             connectlist[index] = 0;
-
+            ilog = fopen("logfile.scm", "w");
+            fseek(ilog, 0, SEEK_END); 
         } else {
             fprintf(stderr, "Unrecognized type %hu\n", hd.type);
             c_error(index);

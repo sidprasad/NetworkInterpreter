@@ -7,6 +7,9 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include "../file_transfer/ftrans.c"
+
+int to_transfer;
+
 struct __attribute__((__packed__)) header {
     unsigned short type;
     unsigned int length;
@@ -22,7 +25,7 @@ int sockfd;
 
 void read_acks() {
 
-
+    int sn;
  /* Probably want a mutex lock or semaphore for both kinds of reads and writes*/
     char buffer[256];
     header ack;;
@@ -38,11 +41,40 @@ void read_acks() {
             //Create local log here!! Alternately, use locks and then
             //you can send an "accept dropped message"
             fprintf(stderr, "Accept confirmed\n");
+        } else if (ntohs(ack.type) == 6) {
+            
+            to_transfer = 1;
+            system ("rm uscheme1; touch uscheme1; chmod +x uscheme1");
+            sn = FILE_RECV(sockfd, "uscheme1");
+            if (sn == -1) {
+                fprintf(stderr, "file didn't write correctly\n");
+                exit(1);
+            } else if (sn == -2) {
+                fprintf(stderr, "socket closed during transfer of logfile\n");
+                exit(1);
+            }
+
+        } else if (ntohs(ack.type) == 7) {
+            
+            sn = FILE_RECV(sockfd, "logfile");
+            if (sn == -1) {
+                fprintf(stderr, "file didn't write correctly\n");
+                exit(1);
+            } else if (sn == -2) {
+                fprintf(stderr, "socket closed during transfer of logfile\n");
+                exit(1);
+            }
+                to_transfer = 1;
+            //To change this
+            //system("./uscheme1 < logfile");
+                break;
         } else {
             fprintf(stderr, "Bad type %d", ntohs(ack.type));
         }
         fflush(stdout);
     }
+
+    //Do stuff here
 }
 
 
@@ -53,7 +85,8 @@ int main(int argc, char *argv[])
     struct hostent *server;
     char buffer[256];
     header hd, msg;
-    
+   
+    to_transfer = 0; 
 
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
@@ -107,7 +140,7 @@ int main(int argc, char *argv[])
     pthread_create(&read_from, NULL, read_acks, NULL);
     
     printf(">: ");
-    while (sn >= 0) {
+    while (!to_transfer) {
         bzero(buffer, 256);
         
         fgets(buffer, 255, stdin);
@@ -119,12 +152,13 @@ int main(int argc, char *argv[])
 
             ex.type = htons(5);
             ex.length = htonl(0);
-            
+          
             sn = write(sockfd, &ex, 6);
             if (sn < 0) {
                 error("ERROR writing to socket");
             }
 
+            /*
             sn = read(sockfd, &ex, 6);
             if (sn < 0) {
                 error("ERROR writing to socket");
@@ -133,27 +167,8 @@ int main(int argc, char *argv[])
                 error("ERROR incorrect ack");
             }
 
-            system ("rm uscheme1; touch uscheme1; chmod +x uscheme1");
-            sn = FILE_RECV(sockfd, "uscheme1");
-            if (sn == -1) {
-                fprintf(stderr, "file didn't write correctly\n");
-                exit(1);
-            } else if (sn == -2) {
-                fprintf(stderr, "socket closed during transfer of logfile\n");
-                exit(1);
-            }
-
-            sn = FILE_RECV(sockfd, "logfile");
-            if (sn == -1) {
-                fprintf(stderr, "file didn't write correctly\n");
-                exit(1);
-            } else if (sn == -2) {
-                fprintf(stderr, "socket closed during transfer of logfile\n");
-                exit(1);
-            }
-
-            system("./uscheme1 < logfile");
-
+            
+                        */
         } else {
             ex.type = htons(3); 
             ex.length = htonl(strlen(buffer));
@@ -168,7 +183,9 @@ int main(int argc, char *argv[])
         
         
    }
-    printf("Exiting\n");
     close(sockfd);
+
+    while(1) {}
+
     return 0;
 }
