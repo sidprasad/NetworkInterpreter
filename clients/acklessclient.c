@@ -182,18 +182,20 @@ int main(int argc, char *argv[])
 
     fprintf(stderr, "Now starting interpreter\n"); 
 
-    FILE * in;
+    FILE *in;
     int fd[2];
     int temp_pid;
 
     pipe(fd);
     
-    if(temp_pid = fork()) {
+    /*if(temp_pid = fork()) {
+
+        sleep(0.5);
         char *input = NULL;
         size_t n = 256;
         in = fdopen(fd[1], "w");
         // Read things and write them to in
-        fprintf(in, "(use logfile.scm)");
+        fprintf(in, "(use logfile.scm)\n");
       while(1) {
         getline(&input, &n, stdin);
         fprintf(in, input);
@@ -202,10 +204,10 @@ int main(int argc, char *argv[])
     } else {
         close(0);
         dup(fd[0]);
-        close(1);
+        close(1);*/
         execl("uscheme1", "uscheme1", NULL);
 
-    }
+   // }
 
 
     return 0;
