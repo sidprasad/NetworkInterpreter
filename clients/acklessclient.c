@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 
     pipe(fd);
     
-    /*if(temp_pid = fork()) {
+    if(temp_pid = fork()) {
 
         sleep(0.5);
         char *input = NULL;
@@ -204,10 +204,12 @@ int main(int argc, char *argv[])
     } else {
         close(0);
         dup(fd[0]);
-        close(1);*/
+        close(1);
+        close(fd[0]);
+        close(fd[1]);
         execl("uscheme1", "uscheme1", NULL);
 
-   // }
+   }
 
 
     return 0;
