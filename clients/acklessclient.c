@@ -9,6 +9,7 @@
 #include "../file_transfer/ftrans.c"
 
 int to_transfer;
+int received;
 
 struct __attribute__((__packed__)) header {
     unsigned short type;
@@ -72,9 +73,10 @@ void read_acks() {
         fflush(stdout);
     }
 
+    received = 1; 
     //Do stuff here
 
-    system("./uscheme1");
+    //system("./uscheme1");
 }
 
 
@@ -86,6 +88,7 @@ int main(int argc, char *argv[])
     char buffer[256];
     header hd, msg;
    
+    received = 0;
     to_transfer = 0; 
 
     if (argc < 3) {
@@ -173,8 +176,34 @@ int main(int argc, char *argv[])
         
    }
     close(sockfd);
+    printf("Closed connection\n");
+    while(received != 2) {}
 
-    while(1) {}
+    FILE * in;
+    int fd[2];
+    int temp_pid;
+
+    pipe(fd);
+    
+    if(temp_pid = fork()) {
+        char *input = NULL;
+        size_t n = 256;
+        
+        // Read things and write them to in
+        fprintf(in, "(use logfile.scm)");
+      while(1) {
+        getline(&input, &n, stdin);
+        fprintf(in, input);
+        }
+
+    } else {
+        close(0);
+        dup(fd[0]);
+        close(1);
+        execl("uscheme1", "uscheme1", NULL);
+
+    }
+
 
     return 0;
 }
