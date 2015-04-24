@@ -24,12 +24,25 @@ void error(const char *msg)
 }
 int sockfd;
 
-void read_acks() {
+/*
+ *  read_acks():
+ *      a threaded function for readinga all incoming headers and responding 
+ *      to them correctly. 
+ *      Ack Type    | Response
+ *      ____________|___________________________________________________________
+ *          2       | print message of size length from header
+ *          4       | connection accepted handshake
+ *          6       | transfer binary file of interpreter to client
+ *          7       | transfer log file of interpreter client
+ */ 
 
+//TODO: 
+// 1. clean up read input for just a \n in read_acks()
+
+void read_acks() {
     int sn;
- /* Probably want a mutex lock or semaphore for both kinds of reads and writes*/
     char buffer[256];
-    header ack;;
+    header ack;
 
     while(1) {
         read(sockfd, &ack, 6);
@@ -39,8 +52,6 @@ void read_acks() {
             read(sockfd, &buffer, ntohl(ack.length));
             printf(":> %s", buffer);
         }else if(ntohs(ack.type) == 4) {
-            //Create local log here!! Alternately, use locks and then
-            //you can send an "accept dropped message"
         } else if (ntohs(ack.type) == 6) {
             
             to_transfer = 1;
@@ -55,7 +66,6 @@ void read_acks() {
             }
 
         } else if (ntohs(ack.type) == 7) {
-            printf("Getting logfile\n"); 
             sn = FILE_RECV(sockfd, "logfile.scm");
             if (sn == -1) {
                 fprintf(stderr, "file didn't write correctly\n");
@@ -65,16 +75,12 @@ void read_acks() {
                 exit(1);
             }
                 to_transfer = 1;
-            //To change this
                 break;
         } else {
             fprintf(stderr, "Bad type %d", ntohs(ack.type));
         }
         fflush(stdout);
     }
-
-    fprintf(stderr, "Received all files!\n");
-    //system("./uscheme1");
 }
 
 
@@ -128,14 +134,11 @@ int main(int argc, char *argv[])
     char temp[100]; 
 
     if (read(sockfd, &ack, 6) == 6) { 
-        printf("%d\n", ack.type);
         if (ntohs(ack.type) != 8) { 
-            printf("client connect unsuccessful\n"); 
+            fprintf(stderr, "client connect unsuccessful\n"); 
             exit(1); 
         } 
-        else printf("client connect successful\n");
     } 
-    
     
     pthread_t read_from;
     pthread_create(&read_from, NULL, read_acks, NULL);
@@ -143,7 +146,7 @@ int main(int argc, char *argv[])
     printf(">: ");
     while (!to_transfer) {
         bzero(buffer, 256);
-         
+
         fgets(buffer, 255, stdin);
         if (strlen(buffer) > 0) {
             printf(">: ");
@@ -174,49 +177,57 @@ int main(int argc, char *argv[])
         
    }
     close(sockfd);
-    printf("Closed connection\n");
-    fflush(stdout);
     void * dontcare;
 
+    // block here until the other thread finishes executing
     pthread_join(read_from, &dontcare);
 
-    fprintf(stderr, "Now starting interpreter\n"); 
+    fprintf(stdout, "Hit enter to start local interpreter\n"); 
+    fflush(stdout);
 
     FILE *intp;
     int fd[2];
     int temp_pid;
 
+    // puts two valid file descriptors in fd that are unidirectional channels 
+    // for communication between processes
     pipe(fd);
     
+    // if fork != 0, then in parent
     if(temp_pid = fork()) {
+
         char *input = NULL;
         size_t n = 256;
+        // intp now points to child's stdin
         intp = fdopen(fd[1], "w");
+        // tie off loose ends
         close(fd[0]); 
-        // Read things and write them to in
+
         fwrite("(use logfile.scm)\n", 19,1, intp);
         fflush(intp);
         fwrite("\n", 1, 1, intp);
         fflush(intp);
-      while(1) {
-        input = NULL;
-        getline(&input, &n, stdin);
-        fwrite (input, strlen(input), 1, intp);
-        fflush(intp);
-        free(input);
+
+        while(1) {
+
+            input = NULL;
+            getline(&input, &n, stdin);
+            fwrite (input, strlen(input), 1, intp);
+            fflush(intp);
+            free(input);
+
         }
 
+    // if fork == 0, then controlling child
     } else {
-
-        
+        // close stdin and giving the parent a handle on child's stdin
         close(0);
         dup(fd[0]);
         close(fd[0]);
         close(fd[1]);
+        // running the interpreter
         execl("uscheme1", "uscheme1", NULL);
 
    }
-
-
     return 0;
 }
