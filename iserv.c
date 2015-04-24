@@ -328,7 +328,7 @@ void service_client(int index) {
                 header ack; 
                 ack.type = htons(4);
                 ack.len = htonl(0);
-                write(connectlist[index], &ack, 6);
+                write(connectlist[index], &ack, hsize);
                     
                 if (parenCheck(msg, rd)) { 
                     final = malloc(rd + 1);
@@ -344,7 +344,7 @@ void service_client(int index) {
                     errorAck.type = htons(2);
                     errorAck.len = htonl(24);
 
-                    write(connectlist[index], &errorAck, 6);
+                    write(connectlist[index], &errorAck, hsize);
                     write(connectlist[index], err, 24);         
                 }
             } else {
@@ -358,12 +358,12 @@ void service_client(int index) {
             fprintf(stderr, "Graceful exit with user %d\n", index);
             //Send copy of uScheme interpreter and then log
             header ack;
-            ack.type = htons(6);
+            ack.type = htons(hsize);
             ack.len = 0;
-            write(connectlist[index], &ack, 6);
+            write(connectlist[index], &ack, hsize);
             if (FILE_SEND(connectlist[index], "/intepreters/uscheme") == 0) {
                 ack.type = htons(7);
-                write(connectlist[index], &ack, 6);
+                write(connectlist[index], &ack, hsize);
                 if (FILE_SEND(connectlist[index], "logfile.scm") == 0) {}
                 else  printf("transferring log file failed\n");
             } else printf("transferring intepreter file failed\n"); 
