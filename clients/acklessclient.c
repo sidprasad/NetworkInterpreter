@@ -55,7 +55,7 @@ void read_acks() {
             }
 
         } else if (ntohs(ack.type) == 7) {
-            
+            printf("Getting logfile\n"); 
             sn = FILE_RECV(sockfd, "logfile.scm");
             if (sn == -1) {
                 fprintf(stderr, "file didn't write correctly\n");
