@@ -1,5 +1,4 @@
 #!/bin/bash
-gcc -g client.c -o ni_client -lnsl
-gcc -g acklessclient.c -o ack -lnsl -pthread
+gcc -g iclient.c -o ni_client -lnsl -pthread
 
 
