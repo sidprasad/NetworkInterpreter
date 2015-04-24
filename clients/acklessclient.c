@@ -94,7 +94,8 @@ int main(int argc, char *argv[])
     char temp[100]; 
 
     if (read(sockfd, &ack, 6) == 6) { 
-        if (ack.type != 8) { 
+        printf("%d\n", ack.type);
+        if (ntohs(ack.type) != 8) { 
             printf("client connect unsuccessful\n"); 
             exit(1); 
         } 
