@@ -177,7 +177,11 @@ int main(int argc, char *argv[])
    }
     close(sockfd);
     printf("Closed connection\n");
-    while(received != 1) {}
+    fflush(stdout);
+    while(!received) {
+            printf("!");
+            fflush(stdout);
+    }
 
     FILE * in;
     int fd[2];
