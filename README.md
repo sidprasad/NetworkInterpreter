@@ -1,12 +1,14 @@
-#Networks - Comp 112 Final Project
+# Network Interpreter
 ### Shea Clark-Tieche, Siddhartha Prasad, and Nikhil Shinday
 
+*uScheme* is a language detailed in the book *Programming Languages: an
+Interpreter-Based Approach* by Ramsey and Kamin. This repository/directory
+contains a *uScheme* interpreter that can be used by several clients across
+a network. All clients share an environment, and need to be connected to the
+parent server to access it. A graceful exit allows creates a local copy
+of the interpreter with this environment.
 
-This repository/directory contains a *uScheme* interpreter that can be used by
-several clients across a network. All clients share an environment, and need to
- be connected to the parent server to access it.
-
-While this program uses a *uscheme* interpreter, and has some language specific
+While this program uses a *uScheme* interpreter, and has some language specific
 features, the server and client are interpreter agnostic in a general sense.
 
 ## Current Protocol
@@ -34,7 +36,7 @@ same current environment.
 
 ## Usage
 
-Client
+### Client
 
     sh ccompile
     
@@ -43,7 +45,10 @@ Client
     gcc -g iclient.c -o ni_client -lnsl -pthread
     ./ni_client <hostname> <portnumber>
 
-Server
+
+The command  *(exit)* can be used to transfer from a network to local interpreter.
+
+### Server
 
     gcc -g iserv.c -o server -lnsl
     ./server <portnumber>
