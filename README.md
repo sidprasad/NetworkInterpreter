@@ -65,3 +65,15 @@ No files with these names should be in the same directory as the server.
 
 - Implementing a graceful transfer to a local interpreter on unplanned disconnection.
 
+## Applications
+
+- Education
+
+- Job Interviews
+
+- Problem Solving 
+
+- General collaboration
+
+- !! FUN !! 
+
