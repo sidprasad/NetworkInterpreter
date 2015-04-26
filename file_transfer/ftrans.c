@@ -53,8 +53,6 @@ int FILE_RECV(int sockfd, char* fname)
         if (fp == NULL) return -1;
         len = read(sockfd, &len_msg, 4);
         while (len_msg != -1) {
-                // printf("test1: len_msg is %d\n", len_msg);
-                // fflush(stdout);
                 while ((len = recv(sockfd, buffer, len_msg, MSG_PEEK)) != len_msg) {
                         if (len == 0) {
                                 close(sockfd);
@@ -64,11 +62,7 @@ int FILE_RECV(int sockfd, char* fname)
                         }
                 }
                 len = recv(sockfd, buffer, len_msg, 0); 
-                // printf("test2: len is %d\n", len);
-                // fflush(stdout);
                 fwrite(buffer,1,len,fp);
-                // printf("test3\n");
-                // fflush(stdout);
                 while ((len = recv(sockfd, &len_msg, 4, 0)) != 4) {
                         if (len == 0) {
                                 close(sockfd);
@@ -82,4 +76,6 @@ int FILE_RECV(int sockfd, char* fname)
         fclose(fp);
         return 0;
 }
+
+
 #endif

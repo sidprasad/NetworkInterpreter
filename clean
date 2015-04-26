@@ -1,3 +1,5 @@
+#!/bin/bash
+
 log_output="$(date) "
 
 function kill_pids() {
@@ -14,5 +16,3 @@ log_output+="\n"
 printf "$log_output" >> .clean_log
 rm *~ 2> /dev/null
 rm .nfs* 2> /dev/null
-
-

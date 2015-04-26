@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
        
         fflush(stdout);
         FILE_SEND(sockfd, "uscheme");
+        FILE_SEND(sockfd, "logfile.scm");
         close(sockfd);
         
     }

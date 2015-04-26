@@ -1,0 +1,17 @@
+#!/bin/bash
+# usage: enter the following as command line arguments, in order:
+#       domain name of server host
+#       port to bind server
+gcc -g -lnsl -o serv ftransserv.c -O0
+gcc -g -lnsl -o cli ftransclient.c -O0
+
+if [ $# -eq 0 ]
+then
+        ./serv 9060 &
+        ./cli comp112-01.cs.tufts.edu 9060 &
+else 
+        ./serv $2
+        ./cli $1 $2
+fi
+
+

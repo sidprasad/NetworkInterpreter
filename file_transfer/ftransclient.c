@@ -42,10 +42,10 @@ int main(int argc, char *argv[]) {
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) { 
         error("ERROR connecting");
     }    
-    printf("%d\n", FILE_RECV(sockfd,"uscheme3"));
+    printf("result of sending binary: %d\n", FILE_RECV(sockfd,"uscheme_sent"));
+    printf("result of sending log file: %d\n", FILE_RECV(sockfd,"logfile_sent.scm"));
     close(sockfd);
     fork();
-    system("chmod +x uscheme3");
-    system("./uscheme3");
-    printf("test\n");
+    system("chmod +x uscheme_sent");
+    system("./uscheme_sent < logfile_sent.scm");
 }

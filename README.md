@@ -13,21 +13,41 @@ features, the server and client are interpreter agnostic in a general sense.
 
 ## Usage
 
-### Client
+### Compile and Run
 
-    sh ccompile
+    /bin/bash ni_compile <args>: 
+	<args>: option 1: -c : just compile
+		option 2: <hostname> <port> : will run both server and client
+		option 3: <nil> : just run on localhost
+
+    to run file transfer macro test: 
+    /bin/bash file_transfer/ftcompile <args>: 
+	<args>: option 1: <hostname> <port> : runs both server and client, transfers 
+					binary and logfile to client, forks and runs
+		option 2: <nil> : just run on localhost	
+
+### Compile Client
+
+    ./ni_compile -c
     
     or
 
     gcc -g iclient.c -o ni_client -lnsl -pthread
+
+    To run client: 
     ./ni_client <hostname> <portnumber>
 
 
 The command  `(exit)` can be used to transfer from a network to local interpreter.
 
 ### Server
+    ./ni_compile -c 
 
-    gcc -g iserv.c -o server -lnsl
+    or 
+
+    gcc -g iserv.c -o ni_server -lnsl
+
+    To run server: 
     ./server <portnumber>
 
 ## Future Plans

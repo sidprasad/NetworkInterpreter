@@ -1,0 +1,26 @@
+#!/bin/bash
+gcc -g iserv.c -o ni_server -lnsl
+gcc -g client/iclient.c -o client/ni_client -lnsl -pthread
+
+if [ $1 -eq "-c" ] 
+then 	
+	echo "Compilation complete, exiting" 
+	exit()
+fi
+
+echo "Compilation complete, running" 
+
+if [ $# -eq 0 ]
+then 
+	./ni_server 9060 > server_output &
+	echo "here"
+	./client/./ni_client comp112-01.cs.tufts.edu 9060;
+else 
+	./ni_server $2 > server_output &
+	echo "hure"
+	./client/./ni_client $1 $2; 
+fi
+ 
+./clean
+
+
